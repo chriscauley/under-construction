@@ -1,0 +1,27 @@
+{
+  "name": "under-construction",
+  "version": "1.0.0",
+  "description": "Record and replay ajax to build tests.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chriscauley/under-construction.git"
+  },
+  "keywords": [
+    "js",
+    "testing",
+    "ajax"
+  ],
+  "author": "chriscauley <chris@unrest.io> (https://github.com/chriscauley)",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/chriscauley/under-construction/issues"
+  },
+  "homepage": "https://github.com/chriscauley/under-construction#readme",
+  "dependencies": {
+    "object-hash": "^1.1.8"
+  }
+}

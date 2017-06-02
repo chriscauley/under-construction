@@ -1,0 +1,8 @@
+{
+  "user": {
+    "username": "chriscauley",
+    "email": "void@under-construction.io",
+    "is_superuser": true,
+    "is_staff": true,
+  }
+}
