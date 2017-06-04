@@ -15,7 +15,7 @@
       read: true,
       write: true,
     },
-    active: true,
+    intercept_ajax: false,
     tests: "tests.js",
     max_ms: 2000,
     interval_ms: 20,
@@ -24,7 +24,7 @@
   window.XMLHttpRequest.prototype.send = function() {
     // proxy around xhrReq.open(*arguments);
     var key = this._uc_key;
-    if (!uC.active) { return uC.proxy.send.apply(this, [].slice.call(arguments)); }
+    if (!uC.intercept_ajax) { return uC.proxy.send.apply(this, [].slice.call(arguments)); }
     if (uC.storage.has(key)) {
       var cached_response = uC.storage.get(key);
       konsole.log(
@@ -40,7 +40,7 @@
   window.XMLHttpRequest.prototype.open = function(method, url, async, user, password) {
     // proxy around xhrReq.open(method, url, async, user, password);
     var args = [].slice.call(arguments);
-    if (!uC.active) { return uC.proxy.open.apply(this, args); }
+    if (!uC.intercept_ajax) { return uC.proxy.open.apply(this, args); }
     this._uc_key = objectHash({
       method: method,
       url: url,
@@ -51,7 +51,7 @@
     return uC.proxy.open.apply(this, args);
   };
   uR.postAjax = function postAjax(request) {
-    if (!uC.active) { return }
+    if (!uC.intercept_ajax) { return }
     if (!request.status) { return }
     uC.storage.set(request._uc_key,{
       response: request.response,
@@ -59,4 +59,5 @@
     });
   }
   uR.config.default_tabs = true;
+  konsole.log("start");
 })();
