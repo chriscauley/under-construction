@@ -7,8 +7,6 @@
       remove: function(key) { return uR.storage.remove(PREFIX+key); },
       set: function(key,value) { return uR.storage.set(PREFIX+key,value); },
     },
-    hit: function() { konsole.log.apply(this,["HIT"].concat([].slice.apply(arguments))) },
-    miss: function() { konsole.log.apply(this,["MISS"].concat([].slice.apply(arguments))) },
     proxy: {
       send: window.XMLHttpRequest.prototype.send,
       open: window.XMLHttpRequest.prototype.open,
@@ -25,17 +23,18 @@
   };
   window.XMLHttpRequest.prototype.send = function() {
     // proxy around xhrReq.open(*arguments);
+    var key = this._uc_key;
     if (!uC.active) { return uC.proxy.send.apply(this, [].slice.call(arguments)); }
-    if (uC.storage.has(this._uc_key)) {
-      uC.hit(this._uc_key,this._uc_url);
-      var cached_response = uC.storage.get(this._uc_key);
-      for (key in cached_response) {
-        this[key] = cached_response[key];
-      };
+    if (uC.storage.has(key)) {
+      var cached_response = uC.storage.get(key);
+      konsole.log(
+        ["HIT",cached_response.status,key.slice(0,8)+"...",this._uc_url].join(" "),
+        function reset(e) { uC.storage.remove(key); e.target.innerText = "done!"; }
+      )
       this.onload.apply(cached_response);
       return;
     }
-    uC.miss(this._uc_key);
+    konsole.log("MISS "+this._uc_key);
     return uC.proxy.send.apply(this, [].slice.call(arguments));
   };
   window.XMLHttpRequest.prototype.open = function(method, url, async, user, password) {
