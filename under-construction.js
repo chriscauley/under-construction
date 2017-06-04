@@ -18,6 +18,9 @@
       write: true,
     },
     active: true,
+    tests: "tests.js",
+    max_ms: 2000,
+    interval_ms: 20,
     getContext: function() { return { user_id: uR.auth.user && uR.auth.user.id } },
   };
   window.XMLHttpRequest.prototype.send = function() {
@@ -30,7 +33,7 @@
         this[key] = cached_response[key];
       };
       this.onload.apply(cached_response);
-      return
+      return;
     }
     uC.miss(this._uc_key);
     return uC.proxy.send.apply(this, [].slice.call(arguments));
@@ -56,5 +59,5 @@
       status: request.status,
     });
   }
-  
+  uR.config.default_tabs = true;
 })();
