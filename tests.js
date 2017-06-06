@@ -1,15 +1,15 @@
 (function() {
   function _closeModal() { return uR.test.click("[ur-mask]") }
   function _useLogin() { return [
-    uR.test.changeValue("#id_username","monkey"),
-    uR.test.changeValue("#id_password","butler"),
-    uR.test.click("#submit_button")
   ] };
   function login() {
-    uR.test.setPath("/")
-      .then(uR.test.watchFor("auth-dropdown a"))
-      .then(uR.test.click("auth-dropdown a"))
-      .then(uR.test.watchFor("#id_username"));
+    var t = new uR.test.Test('Fail at login');
+    t.waitFor("auth-dropdown a")
+      .click("auth-dropdown a")
+      .waitFor("#id_username")
+      .changeValue("#id_username","monkey")
+      .changeValue("#id_password","butler")
+      .click("#submit_button")
   };
   function waitThenClick() {
     /*function wait(ms) {
