@@ -17,8 +17,10 @@
     },
     intercept_ajax: false,
     tests: "tests.js",
-    max_ms: 2000,
-    interval_ms: 20,
+    config: {
+      max_ms: 20000,
+      interval_ms: 20,
+    },
     getContext: function() { return { user_id: uR.auth.user && uR.auth.user.id } },
   };
   window.XMLHttpRequest.prototype.send = function() {
@@ -59,5 +61,5 @@
     });
   }
   uR.config.default_tabs = true;
-  konsole.log("start");
+  konsole._start();
 })();
