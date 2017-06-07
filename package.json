@@ -1,6 +1,6 @@
 {
   "name": "under-construction",
-  "version": "1.0.0",
+  "version": "0.0.0a",
   "description": "Record and replay ajax to build tests.",
   "main": "index.js",
   "scripts": {
