@@ -101,6 +101,17 @@
         function() { konsole.log("test fail: "+f.name) }
       )
     },
+    assert: function(f) {
+      return function(resolve,reject) { //#! TODO How do I resolve/reject?
+        var out = f();
+        if (out) {
+          konsole.log("ASSERT",f.name,out);
+        } else {
+          console.log("failed!");
+          konsole.error("ASSERT",f.name,out);
+        }
+      }
+    },
     click: function click(element) {
       return function(resolve,reject) {
         element = (element instanceof HTMLElement)?element:document.querySelector(element);
@@ -155,7 +166,7 @@
         this.promise = Promise.resolve(function() { return true });
         document.querySelector("konsole [title=Logs]").click();
 
-        var fnames = ['click','changeValue','when','wait','waitFor','mouseClick'];
+        var fnames = ['click','changeValue','when','wait','waitFor','mouseClick','assert'];
         uR.forEach(fnames,function(fname) {
           this[fname] = function() {
             this.promise = this.promise.then(uC.test[fname].apply(this,[].slice.apply(arguments)));
