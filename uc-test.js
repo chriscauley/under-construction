@@ -1,5 +1,7 @@
 (function() {
 
+  /* this may be better in a utils file */
+  /* begin utils.js */
   function getXPathTo(element) { // https://stackoverflow.com/a/2631931
     if (element.id) { return "id("+element.id+")"; }
     if (element === document.body) { return element.tagName }
@@ -20,8 +22,24 @@
     return getXPathTo(element).replace(/\/.+\//,'/.../')
   }
 
+  function triggerMouseEvent(node,eventType,xy) {
+    // right now only does offet, which is all I need. Maybe add more later?
+    var rect = node.getBoundingClientRect();
+    var event = document.createEvent("MouseEvents");
+    event.initMouseEvent(
+      eventType,
+      true,true,window,null, // canBubble, cancelable, view, detail
+      0,0, // screenX, screenY
+      xy[0]+rect.left,xy[1]+rect.top // clientX, clientY
+    );
+    node.dispatchEvent(event);
+    konsole.log("triggerMouseEvent",eventType,xy)
+  }
+  /* end utils.js */
   uC.test = {
-    setPath: function setPath(pathname,hash) { // broke
+    setPath: function setPath(pathname,hash) {
+      // #! BROKE
+      // this should be moved in as an initialization variable (comment parameter?) on
       return uC.test.watch(function () {
         hash = hash || "#";
         if (pathname != window.location.pathname ||
@@ -74,7 +92,6 @@
     waitFor: function waitFor(qS,ms,max_ms) {
       ms = ms || 100;
       max_ms = max_ms || 1500;
-      console.log(qS);
       return uC.test.when(function waitFor(){ return document.querySelector(qS) },ms,max_ms);
     },
 
@@ -83,10 +100,6 @@
         function() { konsole.log("test pass: "+f.name) },
         function() { konsole.log("test fail: "+f.name) }
       )
-    },
-    watchFor: function watchFor(querySelector) { // broken
-      var f = function() { return document.querySelector(querySelector) }
-      return function() { return uC.test.watch(f,{name: "watchFor "+querySelector}); }
     },
     click: function click(element) {
       return function(resolve,reject) {
@@ -98,6 +111,28 @@
           throw e;
         }
         konsole.log("clicked",getSmallXPath(element));
+      }
+    },
+    mouseClick: function(element,positions) {
+      /* Like uR.test.click, but can specify xy with at various positions
+         Positions are [[x0,y0],[x1,y1]...] corresponding to:
+         [mousedown,mousemove1,mousemove2...mouseup/click]
+         mousedown: always the first value
+         mousemove(s): everything except the mousedown, possibly []
+         mouseup/click: Both events fire in same place, always last value (even positions.length==1)
+      */
+      return function(resolve,reject) {
+        element = (element instanceof HTMLElement)?element:document.querySelector(element);
+
+        // if they only want one position, why not let position = [x,y]
+        if (positions.length == 2 && typeof positions[0] == "number") { positions = [positions] }
+
+        triggerMouseEvent(element,'mousedown',positions[0]);
+        for (var i=1;i<positions.length;i++) {
+          triggerMouseEvent(element,'mousemove',positions[i]);
+        }
+        triggerMouseEvent(element,'mouseup',positions[positions.length-1]);
+        triggerMouseEvent(element,'click',positions[positions.length-1]);
       }
     },
     changeValue: function changeValue(element,value) {
@@ -119,30 +154,25 @@
         konsole.log(name);
         this.promise = Promise.resolve(function() { return true });
         document.querySelector("konsole [title=Logs]").click();
-        
-        //uR.forEach(fnames,function(fname) {
-          //this[fname] = function
-        //})
+
+        var fnames = ['click','changeValue','when','wait','waitFor','mouseClick'];
+        uR.forEach(fnames,function(fname) {
+          this[fname] = function() {
+            this.promise = this.promise.then(uC.test[fname].apply(this,[].slice.apply(arguments)));
+            return this;
+          }
+          // Because `function.name = fname` does nothing, we need:
+          Object.defineProperty(this[fname],'name',{value:fname});
+        }.bind(this))
       }
-      click(qS) {
-        this.promise = this.promise.then(uC.test.click(qS));
+      waitForThenClick() {
+        var args = [].slice.apply(arguments);
+        return this.wait.apply(this,args).click.apply(this,args);
+      }
+      then() {
+        // pass through to then
+        this.promise = this.promise.then.apply(this.promise,[].slice.apply(arguments))
         return this;
-      }
-      changeValue(qS,value) {
-        this.promise = this.promise.then(uC.test.changeValue(qS,value));
-        return this;
-      }
-      when(f) {
-        this.promise = this.promise.then(uC.test.when(f));
-        return this;
-      }
-      wait() {
-        this.promise = this.promise.then(uC.test.wait.apply(this,[].slice.apply(arguments)));
-        return this;
-      }
-      waitFor() {
-        this.promise = this.promise.then(uC.test.waitFor.apply(this,[].slice.apply(arguments)));
-        return this
       }
     }
   }
