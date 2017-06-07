@@ -34,5 +34,5 @@
   function countTo(number) {
     return function countTo() { return !number--; }
   }
-  uR.config.commands = [login,waitThenClick];
+  uC.test.commands = [login,waitThenClick];
 })();
