@@ -36,6 +36,7 @@
     konsole.log("triggerMouseEvent",eventType,xy)
   }
   /* end utils.js */
+
   uC.test = {
     setPath: function setPath(pathname,hash) {
       // #! BROKE
@@ -74,7 +75,6 @@
             if (new Date() - start > max_ms) {
               konsole.log("rejected ",new Date() - start);
               clearInterval(interval);
-              console.error("["+func_names+"] failed at "+max_ms);
             }
             uR.forEach(funcs,function(f) {
               var out = f();
@@ -107,18 +107,20 @@
         if (out) {
           konsole.log("ASSERT",f.name,out);
         } else {
-          console.log("failed!");
           konsole.error("ASSERT",f.name,out);
+          console.error("failed!");
         }
       }
     },
     click: function click(element) {
       return function(resolve,reject) {
+        var qs = element;
         element = (element instanceof HTMLElement)?element:document.querySelector(element);
         try {
           element.click();
         } catch(e) {
           (typeof reject === "function") && reject(e);
+          konosle.error(qs,"element not found");
           throw e;
         }
         konsole.log("clicked",getSmallXPath(element));
@@ -148,7 +150,16 @@
     },
     changeValue: function changeValue(element,value) {
       return function(resolve,reject) {
-        element = (element instanceof HTMLElement)?element:document.querySelector(element);
+        if (element instanceof HTMLElement) {
+          var qs = getSmallXPath(element);
+        } else {
+          // not sure if I like this...
+          // basically element can be a selector or HTMLElement, might just make it selector from
+          // here on out
+          var qs = element;
+          value = value || this.get(qs);
+          element = document.querySelector(qs);
+        }
         try {
           element.value = value;
           element.dispatchEvent(new Event("change"));
@@ -157,14 +168,13 @@
           throw e;
         }
         konsole.log("changed",getSmallXPath(element));
-      };
+      }.bind(this);
     },
     Test: class Test {
-      constructor(name) {
-        konsole.clear();
-        konsole.log(name);
-        this.promise = Promise.resolve(function() { return true });
-        document.querySelector("konsole [title=Logs]").click();
+      constructor(f) {
+        this.name = f.name;
+        this._main = f;
+        this.run = this.run.bind(this); // got to proxy it so riot doesn't steal it
 
         var fnames = ['click','changeValue','when','wait','waitFor','mouseClick','assert'];
         uR.forEach(fnames,function(fname) {
@@ -176,13 +186,53 @@
           Object.defineProperty(this[fname],'name',{value:fname});
         }.bind(this))
       }
+
+      run() {
+        this.promise = Promise.resolve(function() { return true });
+        this.contexts = [];
+        this._main(this);
+      }
+
       waitForThenClick() {
         var args = [].slice.apply(arguments);
         return this.wait.apply(this,args).click.apply(this,args);
       }
-      then() {
-        // pass through to then
-        this.promise = this.promise.then.apply(this.promise,[].slice.apply(arguments))
+
+      get(key) {
+        var i = this.contexts.length;
+        while (i--) {
+          if (this.contexts[i][key]) { return this.contexts[i][key] }
+        }
+      }
+
+      do(message,context) {
+        this.then(function() {
+          this.contexts.push(context || {});
+          konsole.log("DO",message);
+        }.bind(this));
+        return this;
+      }
+
+      then(f,context_override) {
+        // pass through to Promise.then
+        // #! TOOD: needs a method to override default context of function
+        this.promise = this.promise.then(f)
+        return this;
+      }
+
+      test(f,context_override) {
+        // execute a sub test
+        this.promise.then(function() {
+          f(this);
+        }.bind(this),context_override);
+        return this;
+      }
+
+      done(message) {
+        this.then(function() {
+          konsole.log("DONE", message)
+          this.contexts.pop(); // maybe store this somewhere to display in konsole?
+        }.bind(this));
         return this;
       }
     }

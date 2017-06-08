@@ -11,7 +11,7 @@
       .changeValue("#id_password","butler")
       .click("#submit_button")
   };
-  function waitThenClick() { // broken
+  function waitThenClick(t) { // broken
     var t = new uC.test.Test('Wait Then click');
 
       t.click("auth-dropdown a")
