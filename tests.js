@@ -1,20 +1,17 @@
 (function() {
-  function _closeModal() { return uC.test.click("[ur-mask]") }
-  function _useLogin() { return [
-  ] };
-  function login() {
-    var t = new uC.test.Test('Fail at login');
-    t.waitFor("auth-dropdown a")
+  function login(t) {
+    t.do('Fail at login')
+      .waitFor("auth-dropdown a")
       .click("auth-dropdown a")
       .waitFor("#id_username")
       .changeValue("#id_username","monkey")
       .changeValue("#id_password","butler")
       .click("#submit_button")
+    t.done("bad username/password");
   };
   function waitThenClick(t) { // broken
-    var t = new uC.test.Test('Wait Then click');
-
-      t.click("auth-dropdown a")
+    t.do('Wait Then click')
+      .click("auth-dropdown a")
       .wait(100)
       .when(countTo(20),10,1000)
       .click("[ur-mask]")
@@ -25,14 +22,9 @@
       .wait(500)
       .done(arstarst)
   }
-
-  // function doAll() {
-  //   t.test(login)
-  //     .test(openShoppinCart)
-  // }
     
   function countTo(number) {
     return function countTo() { return !number--; }
   }
-  uC.test.commands = [login,waitThenClick];
+  konsole.addCommands(login,waitThenClick);
 })();
