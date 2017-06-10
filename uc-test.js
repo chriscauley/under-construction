@@ -39,8 +39,6 @@
 
   uC.test = {
     setPath: function setPath(pathname,hash) {
-      // #! BROKE
-      // this should be moved in as an initialization variable (comment parameter?) on
       return uC.test.watch(function () {
         hash = hash || "#";
         if (pathname != window.location.pathname ||
@@ -52,10 +50,10 @@
     },
 
     wait: function wait(ms,s) {
-      return function() {
+      return function wait() {
         return new Promise(function (resolve, reject) {
           setTimeout(function () {
-            konsole.log('waited',ms,s);
+            if (s !== null) { konsole.log('waited',ms,s); }
             resolve();
           }, ms);
         });
@@ -95,12 +93,6 @@
       return uC.test.when(function waitFor(){ return document.querySelector(qS) },ms,max_ms);
     },
 
-    is: function exists(f) { // broken
-      return uC.test.watch(f).then(
-        function() { konsole.log("test pass: "+f.name) },
-        function() { konsole.log("test fail: "+f.name) }
-      )
-    },
     assert: function(f) {
       return function(resolve,reject) { //#! TODO How do I resolve/reject?
         var out = f();
@@ -112,6 +104,11 @@
         }
       }
     },
+
+    assertEqual: function(f,value) {
+      return uC.test.assert(function assertEqual() { return f() == value } );
+    },
+
     click: function click(element) {
       return function(resolve,reject) {
         var qs = element;
@@ -120,7 +117,7 @@
           element.click();
         } catch(e) {
           (typeof reject === "function") && reject(e);
-          konosle.error(qs,"element not found");
+          konsole.error(qs,"element not found");
           throw e;
         }
         konsole.log("clicked",getSmallXPath(element));
@@ -171,15 +168,16 @@
       }.bind(this);
     },
     Test: class Test {
-      constructor(f) {
-        this.name = f.name;
+      constructor(f,config) {
+        this.config = config || {wait: 1000};
+        this.name = f._name || f.name;
         this._main = f;
         this.run = this.run.bind(this); // got to proxy it so riot doesn't steal it
 
-        var fnames = ['click','changeValue','when','wait','waitFor','mouseClick','assert'];
+        var fnames = ['click','changeValue','when','wait','waitFor','mouseClick','assert', 'assertEqual'];
         uR.forEach(fnames,function(fname) {
           this[fname] = function() {
-            this.promise = this.promise.then(uC.test[fname].apply(this,[].slice.apply(arguments)));
+            this.then(uC.test[fname].apply(this,[].slice.apply(arguments)));
             return this;
           }
           // Because `function.name = fname` does nothing, we need:
@@ -195,7 +193,7 @@
 
       waitForThenClick() {
         var args = [].slice.apply(arguments);
-        return this.wait.apply(this,args).click.apply(this,args);
+        return this.waitFor.apply(this,args).click.apply(this,args);
       }
 
       get(key) {
@@ -208,15 +206,17 @@
       do(message,context) {
         this.then(function() {
           this.contexts.push(context || {});
+          konsole.clear();
           konsole.log("DO",message);
-        }.bind(this));
+        });
         return this;
       }
 
       then(f,context_override) {
         // pass through to Promise.then
         // #! TOOD: needs a method to override default context of function
-        this.promise = this.promise.then(f)
+        this.promise = this.promise.then(f.bind(this))
+        if (this.config.wait && f.name != 'wait') { console.log(f.name);  this.wait(this.config.wait) }
         return this;
       }
 
@@ -232,7 +232,7 @@
         this.then(function() {
           konsole.log("DONE", message)
           this.contexts.pop(); // maybe store this somewhere to display in konsole?
-        }.bind(this));
+        });
         return this;
       }
     }
