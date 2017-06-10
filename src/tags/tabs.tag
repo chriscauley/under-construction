@@ -40,7 +40,7 @@ uR.ready(function() {
     this.opts.click && this.opts.click();
   }
 
-  hide() { 
+  hide() {
     this.root.classList.add("hidden");
   }
 

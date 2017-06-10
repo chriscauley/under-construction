@@ -12,8 +12,8 @@ var PROJECT_NAME = "uc";
 
 var JS_FILES = [
   ".dist/_tags.js",
-  "under-construction.js",
-  "uc-test.js",
+  "src/js/under-construction.js",
+  "src/js/uc-test.js",
 ];
 
 gulp.task('build-js', ['build-tag'], function () {

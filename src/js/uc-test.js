@@ -187,7 +187,6 @@
 
       run() {
         this.promise = Promise.resolve(function() { return true });
-        console.log(this.promise);
         this.contexts = [];
         this._main(this);
       }
@@ -216,9 +215,8 @@
       then(f,context_override) {
         // pass through to Promise.then
         // #! TOOD: needs a method to override default context of function
-        console.log('p',this,this.promise);
         this.promise = this.promise.then(f.bind(this))
-        if (this.config.wait && f.name != 'wait') { console.log(f.name);  this.wait(this.config.wait) }
+        if (this.config.wait && f.name != 'wait') { this.wait(this.config.wait) }
         return this;
       }
 
