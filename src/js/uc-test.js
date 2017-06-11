@@ -119,13 +119,13 @@
       }
     },
 
-    assert: function(f) {
+    assert: function(f,name) {
       return function(resolve,reject) { //#! TODO How do I resolve/reject?
         var out = f();
         if (out) {
-          konsole.log("ASSERT",f.name,out);
+          konsole.log("ASSERT",name || f.name,out);
         } else {
-          konsole.error("ASSERT",f.name,out);
+          konsole.error("ASSERT",name || f.name,out);
           console.error("failed!");
         }
       }
@@ -173,6 +173,10 @@
     },
 
     changeValue: function changeValue(element,value) {
+      if (!value) { // one argument means set last element value to first argument
+        value = element;
+        element = undefined;
+      }
       return function(resolve,reject) {
         element = uC.find(element)
         if (element._query_selector) {

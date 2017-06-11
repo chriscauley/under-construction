@@ -24,10 +24,25 @@
       .done(arstarst)
   }
 
+
+  function formIsValid() {
+    return !uC.find("#submit_button").classList.contains("disabled");
+  }
+  function formIsInvalid() {
+    return uC.find("#submit_button").classList.contains("disabled");
+  }
   function testURForm(t) {
     var schema = ['first-name','last-name',{ name: 'email', type:'email'} ];
     t.do('Making and testing ur-form element')
       .then(function() { uR.mountElement('ur-form',{schema: schema}) })
+      .wait("#submit_button.disabled")
+      .changeValue("#id_first-name","monkey")
+      .changeValue("#id_last-name","butler")
+      .changeValue("#id_email","arst@neio.com")
+      .assert(formIsValid)
+      .changeValue("#id_email","not an email")
+      .assert(formIsInvalid)
+      .assert(function () { document.querySelector("ur-form .email.invalid") })
       .done()
   }
 
