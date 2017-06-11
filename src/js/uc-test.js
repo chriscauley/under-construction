@@ -35,9 +35,28 @@
     node.dispatchEvent(event);
     konsole.log("triggerMouseEvent",eventType,xy)
   }
+
+  uC.find = function find(element) {
+    // #! TODO I'd prefer this to be on uC.test.Test, but uC.test.FUNCTION uses it heavily it has to be here for now
+    /* A wrapper around document.querySelector that takes a wide variety of arguments
+       element === undefined: Use last known active element
+       typeof element == "string": Run document.querySelector (maybe someday uC.test.root.querySelector)
+       else: element should be an HTMLElement
+    */
+    element = element || uC._last_active_element; // maybe || uC._last_query_selector
+    if (typeof element == "string") {
+      uC._last_query_selector  = element;
+      element = document.querySelector(element);
+      if (element) { element._query_selector = uC._last_query_selector; }
+    }
+    uC._last_active_element = element;
+    return element
+  }
+
   /* end utils.js */
 
   uC.test = {
+
     setPath: function setPath(pathname,hash) {
       return uC.test.watch(function () {
         hash = hash || "#";
@@ -49,8 +68,8 @@
       });
     },
 
-    wait: function wait(ms,s) {
-      return function wait() {
+    waitForTime: function waitForTime(ms,s) {
+      return function waitForTime() {
         return new Promise(function (resolve, reject) {
           setTimeout(function () {
             if (s !== null) { konsole.log('waited',ms,s); }
@@ -60,37 +79,44 @@
       }
     },
 
-    when: function when(funcs,ms,max_ms) {
-      // we can take an array or a function
-      if (typeof funcs == "function") { funcs = [funcs] }
-      var func_names = funcs.map((f) => f.name||"(anon)").join("|");
-      ms = ms || 20; // how often to check
-      max_ms = max_ms || 5000; // how long before fail
-      return function() {
+    waitForFunction: function waitForFunction(func,_c) {
+      // #! TODO: these next lines should be generalized
+      var max_ms = (_c||{}).max_ms /* || this.get("max_ms") */ || uC.config.max_ms;
+      var interval_ms = (_c||{}).interval_ms /* || this.get("interval_ms") */ || uC.config.interval_ms;
+      return function waitForFunction() {
         return new Promise(function (resolve, reject) {
           var start = new Date();
           var interval = setInterval(function () {
+            var out = func();
+            if (out) {
+              konsole.log('waitForFunction',func.name);
+              resolve(out);
+              clearInterval(interval)
+              return out
+            }
             if (new Date() - start > max_ms) {
               konsole.log("rejected ",new Date() - start);
               clearInterval(interval);
             }
-            uR.forEach(funcs,function(f) {
-              var out = f();
-              if (out) {
-                konsole.log('when '+f.name);
-                resolve(out);
-                clearInterval(interval)
-              }
-            });
-          }, ms);
+          }, interval_ms);
         });
       }
     },
 
-    waitFor: function waitFor(qS,ms,max_ms) {
-      ms = ms || 100;
-      max_ms = max_ms || 1500;
-      return uC.test.when(function waitFor(){ return document.querySelector(qS) },ms,max_ms);
+    wait: function wait() {
+      var args = [].slice.apply(arguments);
+      var arg0 = args[0];
+      if (typeof arg0 == "number") {
+        // they are just calling t.wait(ms)
+        return uC.test.waitForTime.apply(this,args);
+      }
+      if (typeof arg0 == "function") {
+        return uC.test.waitForFunction.apply(this,args);
+      }
+      if (typeof arg0 == "string") {
+        args[0] = function waitForElement() { return uC.find(arg0) }
+        return uC.test.waitForFunction.apply(this,args);
+      }
     },
 
     assert: function(f) {
@@ -111,18 +137,18 @@
 
     click: function click(element) {
       return function(resolve,reject) {
-        var qs = element;
-        element = (element instanceof HTMLElement)?element:document.querySelector(element);
+        element = uC.find(element);
         try {
           element.click();
         } catch(e) {
           (typeof reject === "function") && reject(e);
-          konsole.error(qs,"element not found");
+          konsole.error(uC._last_query_selector,"element not found");
           throw e;
         }
         konsole.log("clicked",getSmallXPath(element));
       }
     },
+
     mouseClick: function(element,positions) {
       /* Like uR.test.click, but can specify xy with at various positions
          Positions are [[x0,y0],[x1,y1]...] corresponding to:
@@ -132,7 +158,7 @@
          mouseup/click: Both events fire in same place, always last value (even positions.length==1)
       */
       return function(resolve,reject) {
-        element = (element instanceof HTMLElement)?element:document.querySelector(element);
+        element = uC.find(element);
 
         // if they only want one position, why not let position = [x,y]
         if (positions.length == 2 && typeof positions[0] == "number") { positions = [positions] }
@@ -145,39 +171,39 @@
         triggerMouseEvent(element,'click',positions[positions.length-1]);
       }
     },
+
     changeValue: function changeValue(element,value) {
       return function(resolve,reject) {
-        if (element instanceof HTMLElement) {
-          var qs = getSmallXPath(element);
-        } else {
-          // not sure if I like this...
-          // basically element can be a selector or HTMLElement, might just make it selector from
-          // here on out
-          var qs = element;
-          value = value || this.get(qs);
-          element = document.querySelector(qs);
+        element = uC.find(element)
+        if (element._query_selector) {
+          value = value || this.get(element._query_selector);
         }
         try {
           element.value = value;
           element.dispatchEvent(new Event("change"));
+          element.dispatchEvent(new Event("blur"));
         } catch(e) {
           (typeof reject === "function") && reject(e);
+          konosle.error("Cannot change value on",element)
           throw e;
         }
-        konsole.log("changed",getSmallXPath(element));
+        konsole.log("changed",element._query_selector);
       }.bind(this);
     },
     Test: class Test {
       constructor(f,config) {
-        this.config = config || {wait: 1000};
+        this.config = config || { wait_ms: 1000 };
         this.name = f._name || f.name;
         this._main = f;
         this.run = this.run.bind(this); // got to proxy it so riot doesn't steal it
 
-        var fnames = ['click','changeValue','when','wait','waitFor','mouseClick','assert', 'assertEqual'];
+        var fnames = ['click','changeValue','wait','waitForTime','waitForFunction','mouseClick','assert', 'assertEqual'];
         uR.forEach(fnames,function(fname) {
           this[fname] = function() {
-            this.then(uC.test[fname].apply(this,[].slice.apply(arguments)));
+            var f = uC.test[fname];
+            var f2 = f.apply(this,[].slice.apply(arguments));
+            f2._name = f._name || f.name;
+            this.then(f2);
             return this;
           }
           // Because `function.name = fname` does nothing, we need:
@@ -193,7 +219,7 @@
 
       waitForThenClick() {
         var args = [].slice.apply(arguments);
-        return this.waitFor.apply(this,args).click.apply(this,args);
+        return this.wait.apply(this,args).click.apply(this,args);
       }
 
       get(key) {
@@ -215,8 +241,9 @@
       then(f,context_override) {
         // pass through to Promise.then
         // #! TOOD: needs a method to override default context of function
-        this.promise = this.promise.then(f.bind(this))
-        if (this.config.wait && f.name != 'wait') { this.wait(this.config.wait) }
+        this.promise = this.promise.then(f.bind(this));
+        var name = f._name || f.name;
+        if (this.config.wait_ms && name && !name.startsWith('wait') && name != 'done') { this.wait(this.config.wait_ms); }
         return this;
       }
 
@@ -229,7 +256,7 @@
       }
 
       done(message) {
-        this.then(function() {
+        this.then(function done() {
           konsole.log("DONE", message)
           this.contexts.pop(); // maybe store this somewhere to display in konsole?
         });
