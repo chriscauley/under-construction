@@ -1,6 +1,6 @@
 (function() {
-  function login(t) {
-    t.do('Fail at login')
+  function login() {
+    this.do('Fail at login')
       //.wait(100)
       .wait("auth-dropdown a")
       .click("auth-dropdown a")
@@ -8,10 +8,10 @@
       .changeValue("#id_username","monkey")
       .changeValue("#id_password","butler")
       .click("#submit_button")
-    t.done("bad username/password");
+    this.done("bad username/password");
   };
-  function waitThenClick(t) {
-    t.do('Wait Then click')
+  function waitThenClick() {
+    this.do('Wait Then click')
       .click("auth-dropdown a")
       .wait(100)
       .wait(countTo(20),10,1000)
@@ -24,9 +24,9 @@
       .done(arstarst)
   }
 
-  function testURForm(t) {
+  function testURForm() {
     var schema = ['first-name','last-name',{ name: 'email', type:'email'} ];
-    t.do('Making and testing ur-form element')
+    this.do('Making and testing ur-form element')
       .then(function() { uR.mountElement('ur-form',{schema: schema}) })
       .done()
   }
