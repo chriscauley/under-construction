@@ -36,19 +36,20 @@
     konsole.log("triggerMouseEvent",eventType,xy)
   }
 
-  uC.find = function find(element) {
+  uC.find = function find(element,attr) {
     // #! TODO I'd prefer this to be on uC.test.Test, but uC.test.FUNCTION uses it heavily it has to be here for now
     /* A wrapper around document.querySelector that takes a wide variety of arguments
        element === undefined: Use last known active element
        typeof element == "string": Run document.querySelector (maybe someday uC.test.root.querySelector)
        else: element should be an HTMLElement
     */
-    element = element || uC._last_active_element; // maybe || uC._last_query_selector
+    element = element || uC._last_active_element;
     if (typeof element == "string") {
       uC._last_query_selector  = element;
       element = document.querySelector(element);
       if (element) { element._query_selector = uC._last_query_selector; }
     }
+    element.setAttribute("uc-state",attr);
     uC._last_active_element = element;
     return element
   }
@@ -96,6 +97,7 @@
             }
             if (new Date() - start > max_ms) {
               konsole.log("rejected ",new Date() - start);
+              reject()
               clearInterval(interval);
             }
           }, interval_ms);
@@ -114,7 +116,7 @@
         return uC.test.waitForFunction.apply(this,args);
       }
       if (typeof arg0 == "string") {
-        args[0] = function waitForElement() { return uC.find(arg0) }
+        args[0] = function waitForElement() { return uC.find(arg0,'waiting') }
         return uC.test.waitForFunction.apply(this,args);
       }
     },
@@ -122,11 +124,12 @@
     assert: function(f,name) {
       return function(resolve,reject) { //#! TODO How do I resolve/reject?
         var out = f();
+        name = name || f.name;
         if (out) {
-          konsole.log("ASSERT",name || f.name,out);
+          konsole.log("ASSERT",name,out);
         } else {
-          konsole.error("ASSERT",name || f.name,out);
-          console.error("failed!");
+          konsole.error("ASSERT",name,out);
+          console.error("Assertion failed at "+name);
         }
       }
     },
@@ -137,7 +140,7 @@
 
     click: function click(element) {
       return function(resolve,reject) {
-        element = uC.find(element);
+        element = uC.find(element,'clicked');
         try {
           element.click();
         } catch(e) {
@@ -145,7 +148,7 @@
           konsole.error(uC._last_query_selector,"element not found");
           throw e;
         }
-        konsole.log("clicked",getSmallXPath(element));
+        konsole.log("clicked",element._query_selector);
       }
     },
 
@@ -158,7 +161,7 @@
          mouseup/click: Both events fire in same place, always last value (even positions.length==1)
       */
       return function(resolve,reject) {
-        element = uC.find(element);
+        element = uC.find(element,'mouseClicked');
 
         // if they only want one position, why not let position = [x,y]
         if (positions.length == 2 && typeof positions[0] == "number") { positions = [positions] }
@@ -178,7 +181,7 @@
         element = undefined;
       }
       return function(resolve,reject) {
-        element = uC.find(element)
+        element = uC.find(element,'changed')
         if (element._query_selector) {
           value = value || this.get(element._query_selector);
         }
@@ -245,9 +248,9 @@
       then(f,context_override) {
         // pass through to Promise.then
         // #! TOOD: needs a method to override default context of function
-        this.promise = this.promise.then(f.bind(this));
         var name = f._name || f.name;
-        if (this.config.wait_ms && name && !name.startsWith('wait') && name != 'done') { this.wait(this.config.wait_ms); }
+        if (this.config.wait_ms && name && !name.match(/^(wait|done$)/)) { this.wait(this.config.wait_ms); }
+        this.promise = this.promise.then(f.bind(this));
         return this;
       }
 
