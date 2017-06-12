@@ -13,14 +13,10 @@
       send: window.XMLHttpRequest.prototype.send,
       open: window.XMLHttpRequest.prototype.open,
     },
-    config: {
-      read: true,
-      write: true,
-    },
     intercept_ajax: false,
     tests: "tests.js",
     config: {
-      max_ms: 20000,
+      max_ms: 5000,
       interval_ms: 20,
     },
     getContext: function() {

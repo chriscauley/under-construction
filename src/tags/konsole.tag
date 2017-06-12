@@ -65,7 +65,7 @@
         var a = [].slice.call(arguments);
         var ts = (new Date() - konsole.log._last);
         if (!ts && ts !== 0) { ts = 'START' }
-        else if (ts > 1000) { ts = "+"+ts.toFixed(1)+"s" }
+        else if (ts > 1000) { ts = "+"+(ts/1000).toFixed(1)+"s" }
         else { ts = "+"+ts+"ms" }
         a.ts = ts;
         that.log.push(a);
@@ -91,7 +91,9 @@
       _ready: konsole._ready,
       addCommands: function() {
         uR.forEach(arguments,function(command) {
-          konsole.commands.push(new uC.test.Test(command))
+          var test = new uC.test.Test(command)
+          konsole.commands.push(test);
+          if (uC.storage.get("__main__") == command.name) { test.run() }
         });
       },
     };

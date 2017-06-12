@@ -59,14 +59,13 @@
   uC.test = {
 
     setPath: function setPath(pathname,hash) {
-      return uC.test.watch(function () {
+      return function () {
         hash = hash || "#";
-        if (pathname != window.location.pathname ||
-            hash != window.location.has) {
+        if (pathname != window.location.pathname || hash != window.location.has) {
           window.location = pathname + (hash || "#");
         }
         return true;
-      });
+      };
     },
 
     waitForTime: function waitForTime(ms,s) {
@@ -139,7 +138,7 @@
     },
 
     click: function click(element) {
-      return function(resolve,reject) {
+      return function click(resolve,reject) {
         element = uC.find(element,'clicked');
         try {
           element.click();
@@ -223,7 +222,13 @@
       run() {
         this.promise = Promise.resolve(function() { return true });
         this.contexts = [];
-        this._main(this);
+        uC.storage.set("__main__",this._main.name);
+        this._main(this)
+        this.then(this.stop);
+      }
+
+      stop() {
+        uC.storage.set("__main__",undefined);
       }
 
       waitForThenClick() {
@@ -251,7 +256,7 @@
         // pass through to Promise.then
         // #! TOOD: needs a method to override default context of function
         var name = f._name || f.name;
-        if (this.config.wait_ms && name && !name.match(/^(wait|done$)/)) { this.wait(this.config.wait_ms); }
+        if (this.config.wait_ms && name && !name.match(/^(wait|done$|stop$)/)) { this.wait(this.config.wait_ms); }
         this.promise = this.promise.then(f.bind(this));
         return this;
       }
