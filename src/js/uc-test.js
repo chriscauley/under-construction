@@ -49,7 +49,7 @@
       element = document.querySelector(element);
       if (element) { element._query_selector = uC._last_query_selector; }
     }
-    element.setAttribute("uc-state",attr);
+    element && element.setAttribute("uc-state",attr);
     uC._last_active_element = element;
     return element
   }
@@ -96,7 +96,7 @@
               return out
             }
             if (new Date() - start > max_ms) {
-              konsole.log("rejected ",new Date() - start);
+              konsole.error(func.name,new Date() - start);
               reject()
               clearInterval(interval);
             }
@@ -204,12 +204,14 @@
         this._main = f;
         this.run = this.run.bind(this); // got to proxy it so riot doesn't steal it
 
-        var fnames = ['click','changeValue','wait','waitForTime','waitForFunction','mouseClick','assert', 'assertEqual'];
+        var fnames = [
+          'click','changeValue','wait','waitForTime','waitForFunction','mouseClick','assert', 'assertEqual','setPath'
+        ];
         uR.forEach(fnames,function(fname) {
           this[fname] = function() {
             var f = uC.test[fname];
             var f2 = f.apply(this,[].slice.apply(arguments));
-            f2._name = f._name || f.name;
+            f2._name = name;
             this.then(f2);
             return this;
           }
