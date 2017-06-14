@@ -1,12 +1,12 @@
 (function() {
   function login(t) {
     t.do('Fail at login')
-      //.wait(100)
       .wait("auth-dropdown a")
       .click("auth-dropdown a")
       .wait("#id_username")
       .changeValue("#id_username","monkey")
       .changeValue("#id_password","butler")
+      .debugger()
       .click("#submit_button")
     t.done("bad username/password");
   };
