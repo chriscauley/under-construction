@@ -84,18 +84,19 @@
       var max_ms = (_c||{}).max_ms /* || this.get("max_ms") */ || uC.config.max_ms;
       var interval_ms = (_c||{}).interval_ms /* || this.get("interval_ms") */ || uC.config.interval_ms;
       return function waitForFunction() {
+        var name = func._name || func.name;
         return new Promise(function (resolve, reject) {
           var start = new Date();
           var interval = setInterval(function () {
             var out = func();
             if (out) {
-              konsole.log('waitForFunction',func.name);
+              konsole.log('waitForFunction',name);
               resolve(out);
               clearInterval(interval)
               return out
             }
             if (new Date() - start > max_ms) {
-              konsole.error(func.name,new Date() - start);
+              konsole.error(name,new Date() - start);
               reject()
               clearInterval(interval);
             }
@@ -116,6 +117,7 @@
       }
       if (typeof arg0 == "string") {
         args[0] = function waitForElement() { return uC.find(arg0,'waiting') }
+        args[0]._name = "waitForElement "+arg0;
         return uC.test.waitForFunction.apply(this,args);
       }
     },
@@ -175,10 +177,6 @@
     },
 
     changeValue: function changeValue(element,value) {
-      if (!value) { // one argument means set last element value to first argument
-        value = element;
-        element = undefined;
-      }
       return function(resolve,reject) {
         element = uC.find(element,'changed')
         if (element._query_selector) {
@@ -190,7 +188,7 @@
           element.dispatchEvent(new Event("blur"));
         } catch(e) {
           (typeof reject === "function") && reject(e);
-          konosle.error("Cannot change value on",element)
+          konsole.error("Cannot change value on",element)
           throw e;
         }
         konsole.log("changed",element._query_selector);
@@ -198,7 +196,7 @@
     },
     Test: class Test {
       constructor(f,config) {
-        this.config = config || { wait_ms: 1000 };
+        this.config = config || { wait_ms: 100 };
         this.name = f._name || f.name;
         this._main = f;
         this.run = this.run.bind(this); // got to proxy it so riot doesn't steal it
@@ -228,7 +226,7 @@
       }
 
       stop() {
-        uC.storage.set("__main__",undefined);
+        //uC.storage.set("__main__",undefined);
       }
 
       waitForThenClick() {
@@ -241,6 +239,10 @@
         while (i--) {
           if (this.contexts[i][key]) { return this.contexts[i][key] }
         }
+      }
+
+      getLocal(key) {
+        return this.contexts[this.contexts.length-1][key];
       }
 
       do(message,context) {

@@ -56,7 +56,7 @@
     var c = "konsole-open";
     var cL = document.body.classList;
     cL[cL.contains(c)?"remove":"add"](c);
-    uR.storage.set("konsole_open",cL.classList.contains(c) || "");
+    uR.storage.set("konsole_open",cL.contains(c) || "");
   }
   this.on("mount",function() {
     window.konsole = {

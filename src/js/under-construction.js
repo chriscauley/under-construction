@@ -26,7 +26,7 @@
     }
   };
 
-  window.XMLHttpRequest.prototype.send = function() {
+  /*window.XMLHttpRequest.prototype.send = function() {
     // proxy around xhrReq.open(*arguments);
     var key = this._uc_key;
 
@@ -73,7 +73,7 @@
       response: request.response,
       status: request.status,
     });
-  }
+  }*/
 
   uR.config.default_tabs = true;
   konsole._start();
