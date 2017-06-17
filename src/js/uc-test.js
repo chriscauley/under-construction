@@ -58,9 +58,7 @@
   uC.test = {
 
     setPath: function setPath(pathname,hash) {
-      debugger;
       return function () {
-        debugger;
         hash = hash || "#";
         if (pathname != window.location.pathname || hash != window.location.has) {
           window.location = pathname + (hash || "#");
@@ -107,7 +105,6 @@
     },
 
     wait: function wait() {
-      debugger;
       var args = [].slice.apply(arguments);
       var arg0 = args[0];
       if (typeof arg0 == "number") {
@@ -125,9 +122,7 @@
     },
 
     assert: function(f,name) {
-      debugger;
       return function(resolve,reject) { //#! TODO How do I resolve/reject?
-        debugger;
         var out = f();
         name = name || f.name;
         if (out) {
@@ -151,9 +146,7 @@
     },
 
     click: function click(element) {
-      debugger;
       return function click(resolve,reject) {
-        debugger;
         element = uC.find(element,'clicked');
         try {
           element.click();
@@ -167,7 +160,6 @@
     },
 
     mouseClick: function(element,positions) {
-      debugger;
       /* Like uR.test.click, but can specify xy with at various positions
          Positions are [[x0,y0],[x1,y1]...] corresponding to:
          [mousedown,mousemove1,mousemove2...mouseup/click]
@@ -176,7 +168,6 @@
          mouseup/click: Both events fire in same place, always last value (even positions.length==1)
       */
       return function(resolve,reject) {
-        debugger;
         element = uC.find(element,'mouseClicked');
 
         // if they only want one position, why not let position = [x,y]
@@ -195,9 +186,7 @@
     },
 
     changeValue: function changeValue(element,value) {
-      debugger;
       return function(resolve,reject) {
-        debugger;
         element = uC.find(element,'changed')
         if (element._query_selector) {
           value = value || this.get(element._query_selector);
@@ -254,7 +243,6 @@
       }
 
       run() {
-        debugger;
         this.promise = Promise.resolve(true);
         this.contexts = [];
         uC.storage.set("__main__",this._main.name);
