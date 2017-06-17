@@ -133,6 +133,14 @@
         });
       },
     };
+    document.addEventListener("keydown",function(event) {
+      if (event.keyCode == 75 && event.ctrlKey) {
+        event.preventDefault();
+        event.stopPropagation();
+        this.toggle();
+        return false;
+      }
+    }.bind(this));
     uR.forEach(konsole._ready,function(tup) {
       var key = tup[0], args = tup[1];
       konsole[key].apply(this,[].slice.apply(args));
