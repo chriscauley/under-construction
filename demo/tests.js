@@ -6,7 +6,6 @@
       .wait("#id_username")
       .changeValue("#id_username","monkey")
       .changeValue("#id_password","butler")
-      .debugger()
       .click("#submit_button")
     t.done("bad username/password");
   };

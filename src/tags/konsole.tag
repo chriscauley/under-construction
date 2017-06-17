@@ -127,7 +127,7 @@
       _ready: konsole._ready,
       addCommands: function() {
         uR.forEach(arguments,function(command) {
-          var test = new uC.test.Test(command)
+          var test = new uC.Test(command)
           konsole.commands.push(test);
           if (uC.storage.get("__main__") == command.name) { test.run() }
         });
