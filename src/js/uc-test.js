@@ -138,6 +138,13 @@
       return uC.test.assert(function assertEqual() { return f() == value } );
     },
 
+    debugger: function() {
+      return function() {
+        debugger;
+        return true;
+      };
+    },
+
     click: function click(element) {
       return function click(resolve,reject) {
         element = uC.find(element,'clicked');
@@ -219,8 +226,8 @@
         this.run = this.run.bind(this); // got to proxy it so riot doesn't steal it
 
         var fnames = [
-          'click','changeValue','wait','waitForTime','waitForFunction','mouseClick','assert', 'assertEqual','setPath',
-          'checkResults',
+          'click', 'changeValue', 'wait', 'waitForTime', 'waitForFunction',
+          'mouseClick', 'assert', 'assertEqual', 'setPath', 'checkResults', 'debugger'
         ];
         uR.forEach(fnames,function(fname) {
           this[fname] = function() {
