@@ -33,7 +33,6 @@
       xy[0]+rect.left,xy[1]+rect.top // clientX, clientY
     );
     node.dispatchEvent(event);
-    konsole.log("triggerMouseEvent",eventType,xy)
   }
 
   uC.find = function find(element,attr) {
@@ -173,6 +172,9 @@
         }
         triggerMouseEvent(element,'mouseup',positions[positions.length-1]);
         triggerMouseEvent(element,'click',positions[positions.length-1]);
+
+        // in total this is down (1) + move (length) + up (1) + click (1) moves, or length+2
+        konsole.log("triggered "+positions.length+2+" mouse moves",element)
       }
     },
 
@@ -194,6 +196,21 @@
         konsole.log("changed",element._query_selector);
       }.bind(this);
     },
+
+    checkResults: function(key,value_func) {
+      return function(resolve,reject) {
+        var value = value_func();
+        var old = uC.results.get(key);
+        if (old != value) {
+          konsole.warn("Result changed",key,old,value,function replace(){
+            uC.results.set(key,value);
+            return "updated!"
+          });
+        } else {
+          konsole.log("Result: "+key,value);
+        }
+      }
+    },
     Test: class Test {
       constructor(f,config) {
         this.config = config || { wait_ms: 100 };
@@ -202,7 +219,8 @@
         this.run = this.run.bind(this); // got to proxy it so riot doesn't steal it
 
         var fnames = [
-          'click','changeValue','wait','waitForTime','waitForFunction','mouseClick','assert', 'assertEqual','setPath'
+          'click','changeValue','wait','waitForTime','waitForFunction','mouseClick','assert', 'assertEqual','setPath',
+          'checkResults',
         ];
         uR.forEach(fnames,function(fname) {
           this[fname] = function() {
@@ -221,12 +239,17 @@
         this.promise = Promise.resolve(function() { return true });
         this.contexts = [];
         uC.storage.set("__main__",this._main.name);
-        this._main(this)
+        this._main(this);
+        this.ur_status = uR.config.btn_warning; // eventually we'll use something like uC.css, which can be imported dynamically
         this.then(this.stop);
+        konsole.update()
       }
 
       stop() {
-        //uC.storage.set("__main__",undefined);
+        return function stop() {
+          this.ur_status = uR.config.btn_success;
+          konsole.update();
+        }
       }
 
       waitForThenClick() {

@@ -5,7 +5,8 @@
       var k = document.body.appendChild(document.createElement("konsole"));
       riot.mount("konsole");
       document.body.classList.add("konsole-open");
-    }
+    },
+    schema:[],
   };
   uR.forEach(['log','warn','error','watch','addCommands'],function(key) {
     konsole[key] = function() {
@@ -21,10 +22,9 @@
   <button class="toggle" onclick={ toggle }></button>
   <ur-tabs>
     <ur-tab title="Logs">
-      <div each={ line,lineno in parent.parent.log } data-lineno={ lineno } data-ms="{ line.ts }">
-        <span each={ word in line }>
-          <a href="javascript:void()" if={ typeof(word) === 'function' } onclick={ word }></a>
-          <u if={ typeof(word) !== 'function' }>{ word }</u>
+      <div each={ line,lineno in parent.parent.log } data-lineno={ lineno } data-ms="{ line.ts }" class={ line.className }>
+        <span each={ line }>
+          <span onclick={ click } class={ className }>{ _name }</span>
         </span>
       </div>
     </ur-tab>
@@ -32,6 +32,9 @@
       <div each={ parent.parent.watch }>
         <b>{ key }:</b> { value }
       </div>
+    </ur-tab>
+    <ur-tab title="Settings">
+      <ur-form schema={ konsole.schema }></ur-form>
     </ur-tab>
   </ur-tabs>
   <div class="commands">
@@ -60,15 +63,43 @@
   }
   this.on("mount",function() {
     window.konsole = {
+      schema: [ 'wait_ms' ],
       log: function() {
         // arguments can be strings or functions
         var a = [].slice.call(arguments);
+        var out = [];
+        if (a[0] == "WARN") { out.className = "kwarning" }
         var ts = (new Date() - konsole.log._last);
         if (!ts && ts !== 0) { ts = 'START' }
         else if (ts > 1000) { ts = "+"+(ts/1000).toFixed(1)+"s" }
         else { ts = "+"+ts+"ms" }
-        a.ts = ts;
-        that.log.push(a);
+        out.ts = ts;
+        uR.forEach(a,function(word) {
+          var new_word = { content: word, _name: word, className: "u" };
+
+          if (typeof word == "function") {
+            new_word.className = "function";
+            new_word.func = word;
+            new_word.click = function (e) {
+              e.item.click = undefined;
+              e.item._name = e.item.func() || "DONE!";
+              konsole.update();
+            }
+            new_word._name = word._name || word.name;
+          } else if (typeof word == "string") {
+            new_word.content = word;
+            new_word._name = (word.length < 30)?word:word.slice(0,15)+"...";
+            if (word.startsWith("data:image")) {
+              new_word.className = "dataURL";
+              new_word._name = "dataURL";
+              new_word.click = function() { window.open(new_word.content) }
+            }
+          } else if (word === undefined) {
+            new_word = { className: "undefined", _name: "undefined" }
+          }
+          out.push(new_word);
+        });
+        that.log.push(out);
         that.update();
         konsole.log._last = new Date();
         var container = that.root.querySelector("ur-tab[title='Logs']");
@@ -79,6 +110,11 @@
         args.unshift("ERROR");
         konsole.log.apply(konsole,args);
         console.error.apply(window,args); // to get chrome's interactive stack trace
+      },
+      warn: function() {
+        var args = [].slice.call(arguments);
+        args.unshift("WARN");
+        konsole.log.apply(konsole,args);
       },
       clear: function() { konsole.log._last = undefined },
       update: that.update,

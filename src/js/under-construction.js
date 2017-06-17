@@ -3,12 +3,8 @@
   var PREFIX = "__under-construciton/";
 
   window.uC = {
-    storage: {
-      get: function(key) { return uR.storage.get(PREFIX+key); },
-      has: function(key) { return uR.storage.has(PREFIX+key); },
-      remove: function(key) { return uR.storage.remove(PREFIX+key); },
-      set: function(key, value) { return uR.storage.set(PREFIX+key, value); },
-    },
+    storage: new uR.Storage(PREFIX),
+    results: new uR.Storage("__uc-results/"),
     proxy: {
       send: window.XMLHttpRequest.prototype.send,
       open: window.XMLHttpRequest.prototype.open,
@@ -21,7 +17,7 @@
     },
     getContext: function() {
       return {
-        user_id: uR.auth.user && uR.auth.user.id
+        user_id: uR.auth && uR.auth.user && uR.auth.user.id
       }
     }
   };
@@ -76,6 +72,5 @@
   }*/
 
   uR.config.default_tabs = true;
-  konsole._start();
 
 })();

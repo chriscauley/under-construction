@@ -67,3 +67,19 @@ body.konsole-open {
     .toggle:before { content: "vv" }
   }
 }
+
+konsole {
+  .kwarning { background: #fcf8e3; }
+  .u { text-decoration: underline; }
+  .function, .dataURL {
+    border-bottom: 2px solid;
+    cursor: pointer;
+    display: inline-block;
+  }
+  .function { color: blue; }
+  .dataURL { color: green; }
+  .undefined {
+    font-style: italic;
+    font-weight: bold;
+  }
+}
