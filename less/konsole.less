@@ -8,7 +8,7 @@ konsole {
   position: fixed;
   right: 0;
   width: 500px;
-  z-index: 99999;
+  z-index: 99999; // 100,000 is the ur-modal z-index
   ur-tabs, .commands { flex-basis: 50%; height: 50%; }
   ur-tab,.commands { background: rgba(200,200,200,0.8); }
   ur-tabs.default {
@@ -71,7 +71,7 @@ body.konsole-open {
 konsole {
   .kwarning { background: #fcf8e3; }
   .u { text-decoration: underline; }
-  .function, .dataURL {
+  .pointer {
     border-bottom: 2px solid;
     cursor: pointer;
     display: inline-block;
@@ -81,5 +81,12 @@ konsole {
   .undefined {
     font-style: italic;
     font-weight: bold;
+  }
+  .HTMLElement {
+    background: white;
+  }
+  .diff {
+    background: white;
+    color: red;
   }
 }
