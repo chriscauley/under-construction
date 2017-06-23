@@ -24,7 +24,7 @@
     <ur-tab title="Logs">
       <div each={ line,lineno in parent.parent.log } data-lineno={ lineno } data-ms="{ line.ts }" class={ line.className }>
         <span each={ line }>
-          <span onclick={ click } class={ className }>{ _name }</span>
+          <span onclick={ click } class="{ className } { pointer: click }">{ _name }</span>
         </span>
       </div>
     </ur-tab>
@@ -55,6 +55,7 @@
       this.watch.push({key: k, value: watch_ings[k]});
     }
   });
+
   toggle(e) {
     var c = "konsole-open";
     var cL = document.body.classList;
@@ -67,38 +68,40 @@
       log: function() {
         // arguments can be strings or functions
         var a = [].slice.call(arguments);
-        var out = [];
-        if (a[0] == "WARN") { out.className = "kwarning" }
         var ts = (new Date() - konsole.log._last);
         if (!ts && ts !== 0) { ts = 'START' }
         else if (ts > 1000) { ts = "+"+(ts/1000).toFixed(1)+"s" }
         else { ts = "+"+ts+"ms" }
-        out.ts = ts;
-        uR.forEach(a,function(word) {
-          var new_word = { content: word, _name: word, className: "u" };
-
+        var out = a.map(function(word) {
           if (typeof word == "function") {
-            new_word.className = "function";
-            new_word.func = word;
-            new_word.click = function (e) {
-              e.item.click = undefined;
-              e.item._name = e.item.func() || "DONE!";
-              konsole.update();
+            return {
+              className: "function",
+              func: word,
+              _name: word._name || word.name,
+              click: function (e) {
+                e.item.click = undefined;
+                e.item._name = e.item.func() || e.item._name;
+                konsole.update();
+              },
             }
-            new_word._name = word._name || word.name;
           } else if (typeof word == "string") {
-            new_word.content = word;
-            new_word._name = (word.length < 30)?word:word.slice(0,15)+"...";
+            var new_word = {
+              content: word,
+              _name: (word.length < 30)?word:word.slice(0,15)+"...",
+            }
             if (word.startsWith("data:image")) {
               new_word.className = "dataURL";
               new_word._name = "dataURL";
-              new_word.click = function() { window.open(new_word.content) }
+              new_word.click = function() { window.open(word); }
             }
+            return new_word;
           } else if (word === undefined) {
-            new_word = { className: "undefined", _name: "undefined" }
+            return { className: "undefined", _name: "undefined" }
           }
-          out.push(new_word);
+          return word; // it was something else, hopefully pre-formatted
         });
+        if (a[0] == "WARN") { out.className = "kwarning" }
+        out.ts = ts;
         that.log.push(out);
         that.update();
         konsole.log._last = new Date();
@@ -146,5 +149,11 @@
       konsole[key].apply(this,[].slice.apply(args));
     });
     setTimeout(konsole.update,500);
+    if (!document.querySelector(uR.config.mount_alerts_to)) {
+      var e = document.createElement("div");
+      e.id = "alert-div";
+      this.root.appendChild(e);
+      uR.config.mount_alerts_to = "alert-div";
+    }
   });
 </konsole>

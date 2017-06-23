@@ -11,9 +11,10 @@ var babel = require('gulp-babel');
 var PROJECT_NAME = "uc";
 
 var JS_FILES = [
-  ".dist/_tags.js",
   "src/js/under-construction.js",
   "src/js/uc-test.js",
+  "src/js/lib/diff.js",
+  ".dist/_tags.js",
 ];
 
 gulp.task('build-js', ['build-tag'], function () {

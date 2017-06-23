@@ -53,6 +53,18 @@
     return element
   }
 
+  function urlToCanvas(url,callback) { // maybe I should use a promise?
+    var img = new Image();
+    var canvas = document.createElement("canvas");
+    img.onload = function() {
+      canvas.width = img.width;
+      canvas.height = img.height;
+      canvas.getContext("2d").drawImage(img,0,0);
+      callback(canvas);
+    }
+    img.src = url;
+  }
+
   /* end utils.js */
 
   uC.Test = class Test {
@@ -63,7 +75,8 @@
       this.run = this.run.bind(this); // got to proxy it so riot doesn't steal it
 
       var fnames = [
-        'click', 'changeValue', 'wait', 'mouseClick', 'assert', 'assertEqual', 'setPath', 'checkResults', 'debugger'
+        'click', 'changeValue', 'wait', 'mouseClick', 'assert', 'assertEqual', 'setPath', 'checkResults',
+        'debugger', 'ajax'
       ];
       uR.forEach(fnames,function(fname) {
         this[fname] = function() {
@@ -155,6 +168,20 @@
         }
         return true;
       };
+    }
+
+    _ajax(ajax_options,callback) {
+      return function _ajax() {
+        return new Promise(function(resolve,reject) {
+          if (typeof ajax_options == "string") { ajax_options = { url: ajax_options } }
+          var success = ajax_options.success || function() {};
+          ajax_options.success = function(data,request) {
+            success(data,request);
+            (callback(data,request)?resolve:reject)();
+          }
+          uR.ajax(ajax_options);
+        });
+      }
     }
 
     _waitForTime(ms,s) {
@@ -298,13 +325,81 @@
       return function(resolve,reject) {
         var value = value_func();
         var old = uC.results.get(key);
-        if (old != value) {
-          konsole.warn("Result changed",key,old,value,function replace(){
+        if (old.dataURL) { old.click = function() { window.open(old.dataURL) } }
+        var match = old != value;
+        if (value instanceof HTMLElement || value instanceof SVGElement) {
+          var element = value;
+          match = element.outerHTML == old.outerHTML;
+          var value = {
+            outerHTML: element.outerHTML,
+            className: "HTMLElement",
+            _name: "<"+element.tagName+">",
+          }
+          if (["img","canvas"].indexOf(element.tagName.toLowerCase()) != -1) {
+            var canvas = document.createElement("canvas");
+            canvas.width = element.width;
+            canvas.height = element.height;
+            canvas.getContext("2d").drawImage(element,0,0);
+            value.dataURL = canvas.toDatURL();
+            match = value.dataURL = old.dataURL; // outerHTML does nothing for canvas/img
+            value.click = function() { window.open(value.dataURL) }
+            value.title = "View result in new window"
+          } else if (element.tagName.toLowerCase() == "svg") {
+            value.outerHTML = value.outerHTML.replace(/id="[^"]"/g,""); // svgs have random ids throughout
+            var svg = new Blob([value.outerHTML],{type: 'image/svg+xml'});
+            urlToCanvas(URL.createObjectURL(svg),function(canvas) {
+              value.dataURL = canvas.toDataURL();
+            });
+            value.click = function() { window.open(value.dataURL) }
+            value.title = "View result in new window"
+            match = element.outerHTML == old.outerHTML;
+          }
+        }
+        if (match) {
+          konsole.log("Result: "+key,value);
+        } else {
+          var diff = {
+            className: "diff",
+            _name: "diff",
+            title: "View diff in new window",
+            click: function() {
+              if (!old.dataURL || !value.dataURL) {
+                alert("Currently can only diff two images, sorry");
+                throw "Not Implemented";
+              }
+              if (!window.pixelmatch) {
+                throw "Attempted to diff images w/o pixelmatch";
+              }
+              var old_canvas,new_canvas;
+              function next() {
+                if (!old_canvas || !new_canvas) { return }
+                var width = Math.max(new_canvas.width,old_canvas.width);
+                var height = Math.max(new_canvas.height,old_canvas.height);
+                var diff_canvas = document.createElement("canvas");
+                diff_canvas.width = width;
+                diff_canvas.height = height;
+                var diff_ctx = diff_canvas.getContext("2d");
+                var diff = diff_ctx.createImageData(width,height);
+                pixelmatch(
+                  old_canvas.getContext("2d").getImageData(0,0,width,height).data,
+                  new_canvas.getContext("2d").getImageData(0,0,width,height).data,
+                  diff.data,
+                  width,
+                  height,
+                  {threshold:0}
+                )
+                diff_ctx.putImageData(diff,0,0);
+                window.open(diff_canvas.toDataURL());
+              }
+              urlToCanvas(old.dataURL,function(canvas) { old_canvas = canvas; next(); });
+              urlToCanvas(value.dataURL,function(canvas) { new_canvas = canvas; next(); });
+            }
+          }
+          function replace(){
             uC.results.set(key,value);
             return "updated!"
-          });
-        } else {
-          konsole.log("Result: "+key,value);
+          }
+          konsole.warn("Result changed",key,old,value,diff,replace);
         }
       }
     }
