@@ -22,19 +22,6 @@
     return getXPathTo(element).replace(/\/.+\//,'/.../')
   }
 
-  function triggerMouseEvent(node,eventType,xy) {
-    // right now only does offet, which is all I need. Maybe add more later?
-    var rect = node.getBoundingClientRect();
-    var event = document.createEvent("MouseEvents");
-    event.initMouseEvent(
-      eventType,
-      true,true,window,null, // canBubble, cancelable, view, detail
-      0,0, // screenX, screenY
-      xy[0]+rect.left,xy[1]+rect.top // clientX, clientY
-    );
-    node.dispatchEvent(event);
-  }
-
   uC.find = function find(element,attr) {
     // #! TODO I'd prefer this to be on uC.test.Test, but uC.test.FUNCTION uses it heavily it has to be here for now
     /* A wrapper around document.querySelector that takes a wide variety of arguments
@@ -290,12 +277,12 @@
         // if they only want one position, why not let position = [x,y]
         if (positions.length == 2 && typeof positions[0] == "number") { positions = [positions] }
 
-        triggerMouseEvent(element,'mousedown',positions[0]);
+        uC.mouse.full(element,'mousedown',positions[0]);
         for (var i=1;i<positions.length;i++) {
-          triggerMouseEvent(element,'mousemove',positions[i]);
+          uC.mouse.full(element,'mousemove',positions[i]);
         }
-        triggerMouseEvent(element,'mouseup',positions[positions.length-1]);
-        triggerMouseEvent(element,'click',positions[positions.length-1]);
+        uC.mouse.full(element,'mouseup',positions[positions.length-1]);
+        uC.mouse.full(element,'click',positions[positions.length-1]);
 
         // in total this is down (1) + move (length) + up (1) + click (1) moves, or length+2
         konsole.log("triggered "+positions.length+2+" mouse moves",element)

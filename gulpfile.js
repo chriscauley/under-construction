@@ -13,7 +13,8 @@ var PROJECT_NAME = "uc";
 var JS_FILES = [
   "src/js/under-construction.js",
   "src/js/uc-test.js",
-  "src/js/lib/diff.js",
+  "src/js/mouse.js",
+  "src/js/diff.js",
   ".dist/_tags.js",
 ];
 
