@@ -1,4 +1,36 @@
 window.uC.lib = window.uC.lib || {};
+
+window.uC.lib.serialize = function serialize(value) {
+  if (value instanceof HTMLElement || value instanceof SVGElement) {
+    var element = value;
+    match = element.outerHTML == old.outerHTML;
+    var value = {
+      outerHTML: element.outerHTML,
+      className: "HTMLElement",
+      _name: "<"+element.tagName+">",
+    }
+    if (["img","canvas"].indexOf(element.tagName.toLowerCase()) != -1) {
+      var canvas = document.createElement("canvas");
+      canvas.width = element.width;
+      canvas.height = element.height;
+      canvas.getContext("2d").drawImage(element,0,0);
+      value.dataURL = canvas.toDatURL();
+      match = value.dataURL = old.dataURL; // outerHTML does nothing for canvas/img
+      value.click = function() { window.open(value.dataURL) }
+      value.title = "View result in new window"
+    } else if (element.tagName.toLowerCase() == "svg") {
+      value.outerHTML = value.outerHTML.replace(/id="[^"]"/g,""); // svgs have random ids throughout
+      var svg = new Blob([value.outerHTML],{type: 'image/svg+xml'});
+      urlToCanvas(URL.createObjectURL(svg),function(canvas) {
+        value.dataURL = canvas.toDataURL();
+      });
+      value.click = function() { window.open(value.dataURL) }
+      value.title = "View result in new window"
+      match = element.outerHTML == old.outerHTML;
+    }
+  }
+  return value
+}
 window.uC.lib.diff = (function() {
   class Diff {
     constructor(a,b) {
@@ -53,4 +85,4 @@ window.uC.lib.diff = (function() {
     HTMLElement: HTMLElement,
   }
 })();
-  
+

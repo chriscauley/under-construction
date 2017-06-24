@@ -27,7 +27,6 @@
       .done(arstarst)
   }
 
-
   function formIsValid() {
     return !uC.find("#submit_button",'valid').classList.contains("disabled");
   }
@@ -62,5 +61,17 @@
       .assert(function() { return state == 2 })
       .done("Ajax tested")
   }
-  konsole.addCommands(login, waitThenClick, testURForm, testAjax);
+
+  function testCanvas(t) {
+    var canvas = document.createElement("canvas");
+    canvas.width = 1;
+    canvas.height = 1;
+    var context = canvas.getContext("2d");
+    var onexone = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQYV2NgAAIAAAUAAarVyFEAAAAASUVORK5CYII=";
+    t.do("Fun with canvas")
+      .assert(function() { return canvas.toDataURL() },onexone)
+      .done("yay")
+  }
+
+  konsole.addCommands(login, waitThenClick, testURForm, testAjax, testCanvas);
 })();

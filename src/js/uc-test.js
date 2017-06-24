@@ -327,43 +327,16 @@
         var old = uC.results.get(key);
         if (old.dataURL) { old.click = function() { window.open(old.dataURL) } }
         var match = old != value;
-        if (value instanceof HTMLElement || value instanceof SVGElement) {
-          var element = value;
-          match = element.outerHTML == old.outerHTML;
-          var value = {
-            outerHTML: element.outerHTML,
-            className: "HTMLElement",
-            _name: "<"+element.tagName+">",
-          }
-          if (["img","canvas"].indexOf(element.tagName.toLowerCase()) != -1) {
-            var canvas = document.createElement("canvas");
-            canvas.width = element.width;
-            canvas.height = element.height;
-            canvas.getContext("2d").drawImage(element,0,0);
-            value.dataURL = canvas.toDatURL();
-            match = value.dataURL = old.dataURL; // outerHTML does nothing for canvas/img
-            value.click = function() { window.open(value.dataURL) }
-            value.title = "View result in new window"
-          } else if (element.tagName.toLowerCase() == "svg") {
-            value.outerHTML = value.outerHTML.replace(/id="[^"]"/g,""); // svgs have random ids throughout
-            var svg = new Blob([value.outerHTML],{type: 'image/svg+xml'});
-            urlToCanvas(URL.createObjectURL(svg),function(canvas) {
-              value.dataURL = canvas.toDataURL();
-            });
-            value.click = function() { window.open(value.dataURL) }
-            value.title = "View result in new window"
-            match = element.outerHTML == old.outerHTML;
-          }
-        }
+        var serialized = uC.lib.serialize(value); // convert it to a serialized object
         if (match) {
-          konsole.log("Result: "+key,value);
+          konsole.log("Result: "+key,serialized);
         } else {
           var diff = {
             className: "diff",
             _name: "diff",
             title: "View diff in new window",
             click: function() {
-              if (!old.dataURL || !value.dataURL) {
+              if (!old.dataURL || !serialized.dataURL) {
                 alert("Currently can only diff two images, sorry");
                 throw "Not Implemented";
               }
@@ -392,14 +365,14 @@
                 window.open(diff_canvas.toDataURL());
               }
               urlToCanvas(old.dataURL,function(canvas) { old_canvas = canvas; next(); });
-              urlToCanvas(value.dataURL,function(canvas) { new_canvas = canvas; next(); });
+              urlToCanvas(serialized.dataURL,function(canvas) { new_canvas = canvas; next(); });
             }
           }
           function replace(){
-            uC.results.set(key,value);
+            uC.results.set(key,serialized);
             return "updated!"
           }
-          konsole.warn("Result changed",key,old,value,diff,replace);
+          konsole.warn("Result changed",key,old,serialized,diff,replace);
         }
       }
     }
