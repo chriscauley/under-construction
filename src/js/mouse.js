@@ -1,6 +1,6 @@
 (function() {
   uC.mouse = {
-    function full(node,eventType,xy) {
+    full: function full(node,eventType,xy) {
       // right now only does offet, which is all I need. Maybe add more later?
       var rect = node.getBoundingClientRect();
       var event = document.createEvent("MouseEvents");

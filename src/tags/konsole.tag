@@ -8,14 +8,30 @@
     },
     schema:[],
   };
-  uR.forEach(['log','warn','error','watch','addCommands'],function(key) {
+  uR.forEach(['log','warn','error','watch','addCommands','toggle'],function(key) {
     konsole[key] = function() {
       konsole._ready.push([key,arguments]);
-      konsole._start();
-      konsole._start = function(){}
+      if (key == "toggle") {
+        konsole._start();
+        konsole._start = function(){}
+      }
     }
   });
   uR._mount_tabs = false;
+  document.addEventListener("keydown",function(event) {
+    if (event.keyCode == 75 && event.ctrlKey) {
+      event.preventDefault();
+      event.stopPropagation();
+      if (event.shiftKey) {
+        uR.storage.set("ACTIVE_KONSOLE",!uR.storage.get("ACTIVE_KONSOLE"));
+      }
+      konsole.toggle();
+      return false;
+    }
+  }.bind(this));
+  uR.ready(function() {
+    if (uR.storage.get("ACTIVE_KONSOLE")) { konsole.toggle(); };
+  });
 })();
 
 <konsole>
@@ -46,7 +62,7 @@
   var watch_keys = [];
   var watch_ings = {};
   this.log = [];
-  var that = this;
+  var self = this;
 
   this.on('update',function() {
     this.watch = [];
@@ -65,6 +81,7 @@
   this.on("mount",function() {
     window.konsole = {
       schema: [ 'wait_ms' ],
+      toggle: self.toggle,
       log: function() {
         // arguments can be strings or functions
         var a = [].slice.call(arguments);
@@ -102,10 +119,10 @@
         });
         if (a[0] == "WARN") { out.className = "kwarning" }
         out.ts = ts;
-        that.log.push(out);
-        that.update();
+        self.log.push(out);
+        self.update();
         konsole.log._last = new Date();
-        var container = that.root.querySelector("ur-tab[title='Logs']");
+        var container = self.root.querySelector("ur-tab[title='Logs']");
         container.scrollTop = container.scrollHeight;
       },
       error: function() {
@@ -120,11 +137,11 @@
         konsole.log.apply(konsole,args);
       },
       clear: function() { konsole.log._last = undefined },
-      update: that.update,
+      update: self.update,
       watch: function(k,v) {
         if (watch_keys.indexOf(k) == -1) { watch_keys.push(k); }
         watch_ings[k] = v;
-        that.update();
+        self.update();
       },
       commands: [],
       _ready: konsole._ready,
@@ -136,14 +153,6 @@
         });
       },
     };
-    document.addEventListener("keydown",function(event) {
-      if (event.keyCode == 75 && event.ctrlKey) {
-        event.preventDefault();
-        event.stopPropagation();
-        this.toggle();
-        return false;
-      }
-    }.bind(this));
     uR.forEach(konsole._ready,function(tup) {
       var key = tup[0], args = tup[1];
       konsole[key].apply(this,[].slice.apply(args));
