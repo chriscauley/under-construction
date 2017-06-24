@@ -1,8 +1,9 @@
 window.uC.lib = window.uC.lib || {};
 
-window.uC.lib.serialize = function serialize(value) {
+window.uC.lib.serialize = function serialize(element,old) {
+  var value = element;
+  var match = old == value;
   if (value instanceof HTMLElement || value instanceof SVGElement) {
-    var element = value;
     match = element.outerHTML == old.outerHTML;
     var value = {
       outerHTML: element.outerHTML,
@@ -28,9 +29,45 @@ window.uC.lib.serialize = function serialize(value) {
       value.title = "View result in new window"
       match = element.outerHTML == old.outerHTML;
     }
+  } else if (typeof value == "string" && value.startsWith("data")) {
+    console.error("move dataURL functionality from konsole into here");
   }
-  return value
+  return [value,match]
 }
+
+window.uC.lib.showDiff = function(old,serialized) {
+  if (!old.dataURL || !serialized.dataURL) {
+    alert("Currently can only diff two images, sorry");
+    throw "Not Implemented";
+  }
+  if (!window.pixelmatch) {
+    throw "Attempted to diff images w/o pixelmatch";
+  }
+  var old_canvas,new_canvas;
+  function next() {
+    if (!old_canvas || !new_canvas) { return }
+    var width = Math.max(new_canvas.width,old_canvas.width);
+    var height = Math.max(new_canvas.height,old_canvas.height);
+    var diff_canvas = document.createElement("canvas");
+    diff_canvas.width = width;
+    diff_canvas.height = height;
+    var diff_ctx = diff_canvas.getContext("2d");
+    var diff = diff_ctx.createImageData(width,height);
+    pixelmatch(
+      old_canvas.getContext("2d").getImageData(0,0,width,height).data,
+      new_canvas.getContext("2d").getImageData(0,0,width,height).data,
+      diff.data,
+      width,
+      height,
+      {threshold:0}
+    )
+    diff_ctx.putImageData(diff,0,0);
+    window.open(diff_canvas.toDataURL());
+  }
+  urlToCanvas(old.dataURL,function(canvas) { old_canvas = canvas; next(); });
+  urlToCanvas(serialized.dataURL,function(canvas) { new_canvas = canvas; next(); });
+}
+
 window.uC.lib.diff = (function() {
   class Diff {
     constructor(a,b) {

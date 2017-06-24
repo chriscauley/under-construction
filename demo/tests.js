@@ -64,12 +64,31 @@
 
   function testCanvas(t) {
     var canvas = document.createElement("canvas");
+    document.getElementById("content").appendChild(canvas);
     canvas.width = 1;
     canvas.height = 1;
     var context = canvas.getContext("2d");
     var onexone = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQYV2NgAAIAAAUAAarVyFEAAAAASUVORK5CYII=";
+    function drawCircle() {
+      context.beginPath();
+      canvas.width = 100;
+      canvas.height=100;
+      var centerX = canvas.width/2,
+      centerY = canvas.height/2,
+      radius = canvas.height/2-5;
+      context.arc(centerX, centerY, radius, 0, 2 * Math.PI, false);
+      context.fillStyle = 'blue';
+      context.fill();
+      context.lineWidth = 5;
+      context.strokeStyle = '#003300';
+      context.stroke();
+    }
     t.do("Fun with canvas")
-      .assert(function() { return canvas.toDataURL() },onexone)
+      .assertEqual(function() { return canvas.toDataURL() },onexone)
+      .checkResults("onexone canvas always accept",function() { return canvas.toDataURL() })
+      .then(drawCircle)
+      .checkResults("blue circle",function() { return canvas.toDataURL() })
+      .checkResults("blue circle",function() { return "monkey" })
       .done("yay")
   }
 

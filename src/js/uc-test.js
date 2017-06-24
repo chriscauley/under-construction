@@ -325,9 +325,9 @@
       return function(resolve,reject) {
         var value = value_func();
         var old = uC.results.get(key);
-        if (old.dataURL) { old.click = function() { window.open(old.dataURL) } }
-        var match = old != value;
-        var serialized = uC.lib.serialize(value); // convert it to a serialized object
+        if (old && old.dataURL) { old.click = function() { window.open(old.dataURL) } }
+        var serialized, match;
+        [serialized,match] = uC.lib.serialize(value,old); // convert it to a serialized object
         if (match) {
           konsole.log("Result: "+key,serialized);
         } else {
@@ -335,38 +335,7 @@
             className: "diff",
             _name: "diff",
             title: "View diff in new window",
-            click: function() {
-              if (!old.dataURL || !serialized.dataURL) {
-                alert("Currently can only diff two images, sorry");
-                throw "Not Implemented";
-              }
-              if (!window.pixelmatch) {
-                throw "Attempted to diff images w/o pixelmatch";
-              }
-              var old_canvas,new_canvas;
-              function next() {
-                if (!old_canvas || !new_canvas) { return }
-                var width = Math.max(new_canvas.width,old_canvas.width);
-                var height = Math.max(new_canvas.height,old_canvas.height);
-                var diff_canvas = document.createElement("canvas");
-                diff_canvas.width = width;
-                diff_canvas.height = height;
-                var diff_ctx = diff_canvas.getContext("2d");
-                var diff = diff_ctx.createImageData(width,height);
-                pixelmatch(
-                  old_canvas.getContext("2d").getImageData(0,0,width,height).data,
-                  new_canvas.getContext("2d").getImageData(0,0,width,height).data,
-                  diff.data,
-                  width,
-                  height,
-                  {threshold:0}
-                )
-                diff_ctx.putImageData(diff,0,0);
-                window.open(diff_canvas.toDataURL());
-              }
-              urlToCanvas(old.dataURL,function(canvas) { old_canvas = canvas; next(); });
-              urlToCanvas(serialized.dataURL,function(canvas) { new_canvas = canvas; next(); });
-            }
+            click: uC.lib.showDiff
           }
           function replace(){
             uC.results.set(key,serialized);
