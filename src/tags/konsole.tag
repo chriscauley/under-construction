@@ -19,12 +19,10 @@
   });
   uR._mount_tabs = false;
   document.addEventListener("keydown",function(event) {
-    if (event.keyCode == 75 && event.ctrlKey) {
+    if (event.keyCode == 75 && event.ctrlKey && event.shiftKey) {
       event.preventDefault();
       event.stopPropagation();
-      if (event.shiftKey) {
-        uR.storage.set("ACTIVE_KONSOLE",!uR.storage.get("ACTIVE_KONSOLE"));
-      }
+      uR.storage.set("ACTIVE_KONSOLE",uR.storage.get("ACTIVE_KONSOLE"));
       konsole.toggle();
       return false;
     }
