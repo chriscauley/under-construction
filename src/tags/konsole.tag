@@ -52,6 +52,10 @@
     </ur-tab>
   </ur-tabs>
   <div class="commands">
+    <div if={ _running }>
+      <button class={ uR.config.btn_success } onclick={ konsole.stop }>
+        Auto-Running: { _running } <i class="fa fa-close"></i></button>
+    </div>
     <div each={ command in konsole.commands }>
       <button class="btn { command.ur_status }" onclick={ command.run }>{ command.name }</button>
     </div>
@@ -76,10 +80,14 @@
     cL[cL.contains(c)?"remove":"add"](c);
     uR.storage.set("konsole_open",cL.contains(c) || "");
   }
+  this.on("update",function() {
+    this._running = uC.storage.get("__main__");
+  });
   this.on("mount",function() {
     window.konsole = {
       schema: [ 'wait_ms' ],
       toggle: self.toggle,
+      stop: function() { uC.storage.set("__main__",null); },
       log: function() {
         // arguments can be strings or functions
         var a = [].slice.call(arguments);
@@ -145,7 +153,7 @@
       _ready: konsole._ready,
       addCommands: function() {
         uR.forEach(arguments,function(command) {
-          var test = new uC.Test(command)
+          var test = new uC.Test(command);
           konsole.commands.push(test);
           if (uC.storage.get("__main__") == command.name) { test.run() }
         });
