@@ -13,7 +13,8 @@
       konsole._ready.push([key,arguments]);
       if (key == "toggle") {
         konsole._start();
-        konsole._start = function(){}
+        konsole._start = function() {};
+        setTimeout(function() { document.querySelector("konsole ur-tabs").classList.add("default"); },500)
       }
     }
   });

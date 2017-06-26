@@ -22,6 +22,4 @@
     }
   };
 
-  uR.config.default_tabs = true;
-
 })();
