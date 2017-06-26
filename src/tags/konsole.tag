@@ -22,7 +22,7 @@
     if (event.keyCode == 75 && event.ctrlKey && event.shiftKey) {
       event.preventDefault();
       event.stopPropagation();
-      uR.storage.set("ACTIVE_KONSOLE",uR.storage.get("ACTIVE_KONSOLE"));
+      uR.storage.set("ACTIVE_KONSOLE",!uR.storage.get("ACTIVE_KONSOLE"));
       konsole.toggle();
       return false;
     }

@@ -6,3 +6,35 @@
   filter: contrast(0) sepia(100%) hue-rotate(116deg) brightness(1.4) saturate(0.28);
 }
 */
+
+/* temporary putting the css for tabs here */
+
+ur-tabs.default {
+  .tab-wrapper { height: 100%; }
+  .tab-anchors a {
+    color: inherit;
+    cursor: pointer;
+    display: inline-block;
+    padding: 5px;
+    border: 1px solid;
+    &.active { text-decoration: underline; }
+  }
+  ur-tab {
+    border: 1px solid;
+    box-sizing: border-box;
+    height: 400px;
+    max-width: 100%;
+    overflow-y: auto;
+    padding: 5px;
+    width: 650px;
+  }
+}
+
+ur-tab {
+  display: block;
+  &.hidden { display: none; }
+}
+
+ur-tabs > [ur-mask] + .tab-wrapper > { /* we are in a modal! */
+  ur-tab, .tab-anchors a { background: var(--body-bg-color); }
+}

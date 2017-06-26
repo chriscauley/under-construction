@@ -29,7 +29,6 @@ gulp.task('build-js', ['build-tag'], function () {
 });
 
 var TAG_FILES = [
-  "src/tags/tabs.tag",
   "src/tags/konsole.tag",
 ]
 
