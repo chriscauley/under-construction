@@ -1,0 +1,103 @@
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/riot/2.6.8/riot.js"></script>
+<script src="https://static.unrest.io/.dist/unrest-built.js"></script>
+
+<script>
+class Test {
+  constructor(isReady,_queue) {
+    this.isReady = isReady || function () { return false };
+    this._queue = _queue || [];
+    this.name = this.isReady.name;
+    this.depth = 0;
+    this._depths = [];
+    this._names = [];
+    this._step = 0;
+    var self = this;
+
+    uR.forEach(['click','change','check'],function(action) {
+      self[action] = function(element,value) {
+        self.then(function() { self.log(action,element,value); });
+        return self
+      }
+    });
+  }
+  log() {
+    console.log.apply(this,[this.indent()].concat(Array.prototype.slice.call(arguments)));
+  }
+  error() {
+    //console.error.apply(this,arguments);
+  }
+  indent() { return Array(this._depths[this._step]+1).join("|"); }
+  then() {
+    uR.forEach(arguments || [],function(f) {
+      this._depths.push(this.depth);
+      this._names.push(this._name);
+      var func = (typeof f == 'function')?f:function() { this.log(f); }
+      this._queue.push(func);
+    }.bind(this));
+    return this;
+  }
+  run() {
+    while (this.isReady() && this._step < this._queue.length) {
+      if (this._names[this._step] != this._names[this._step-1]) { console.log(this._names[this._step]) }
+      this._queue[this._step](this);
+      ++this._step;
+    }
+  }
+  test() {
+    for (var i=0;i<arguments.length;i++) {
+      ++this.depth;
+      this._name = arguments[i].name;
+      arguments[i](this);
+      --this.depth;
+    }
+    return this
+  }
+  start() { this.isReady = function() { return true }; this.run() }
+  stop() { this.isReady = function() { return false }; }
+}
+var my_test = new Test();
+function a(t){ t.log('a')}
+function b(t){ t.log('b')}
+function c(t){ t.log('c')}
+function d(t){ t.log('d')}
+function e(t){ t.log('e')}
+function abcd(t) {
+  t.then(a,b,c,d)
+}
+//r.then(a,a,a).test(abcd).then(d).then(e)
+function login(t) {
+  t.click('login')
+    .change('username','name')
+    .change('password','pw')
+    .click('submit')
+    .check('user_id','name')
+}
+function purchaseClass(t) {
+  t.check('cart_exists')
+    .test(addToCart,pay)
+    .check('cart')
+}
+function addToCart(t) {
+  t.click('classes')
+    .click('add class')
+    .check('cart','has_class')
+}
+function pay(t) {
+  t.click('checkout')
+    .change('cc')
+    .change('exp')
+    .change('cvc')
+    .click('pay')
+}
+function withdraw(t) {
+  t.click('my_classes')
+    .click('withdraw')
+    .check('withdrawn')
+}
+
+my_test.test(login,purchaseClass,pay,withdraw);
+
+
+r.start()
+</script>
