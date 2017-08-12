@@ -28,5 +28,10 @@
   <style>
     body { --body-bg-color: white; }
   </style>
-  <script>uR.config.logo = "../under-construction.gif"; uR.startRouter()</script>
+  <script>
+  uR.config.logo = "../under-construction.gif";
+uR.startRouter();
+uR.auth.reset = function() {};
+uR.auth_enabled = true;
+</script>
 </html>
