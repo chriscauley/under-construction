@@ -1,146 +1,111 @@
-(function() {
+(function () {
+  uC.BaseTest = class BaseTest {
+    constructor() {
+      /* arguments can be functions or an options object
+         if functions, they are bound and exectuted at the end of this constructor
+         if it's a string, the test will take that as the name
+      */
+      var self = this;
+      var options = {};
+      var functions = [];
+      uR.forEach(arguments,function(arg) {
+        if (typeof arg == "object") { options = arg }
+        if (typeof arg == 'function') { functions.push(arg) }
+        if (typeof arg == 'string') { self.name = arg };
+      });
+      this.queue = [];
+      this.name = this.name || (functions.length?functions[0].name:(options.name || "UNNAMED"));
+      this.parent = options.parent;
+      this.depth = this.parent?(this.parent.depth+1):0;
+      this.step = 0;
+      this.run = this.run.bind(this);
 
-  /* this may be better in a utils file */
-  /* begin utils.js */
-  function getXPathTo(element) { // https://stackoverflow.com/a/2631931
-    if (element.id) { return "id("+element.id+")"; }
-    if (element === document.body) { return element.tagName }
-
-    var ix = 0;
-    if (!element.parentNode) {
-      return element.tagName;
-    }
-    var siblings = element.parentNode.childNodes;
-    for (var i=0; i<siblings.length; i++) {
-      var s = siblings[i];
-      if (s === element) { return getXPathTo(element.parentNode)+"/"+element.tagName+'['+(ix+1)+']'; }
-      if (s.nodeType===1 && s.tagName===element.tagName) { ix++ }
-    }
-  }
-
-  function getSmallXPath(element) {
-    return getXPathTo(element).replace(/\/.+\//,'/.../')
-  }
-
-  uC.find = function find(element,attr) {
-    // #! TODO I'd prefer this to be on uC.test.Test, but uC.test.FUNCTION uses it heavily it has to be here for now
-    /* A wrapper around document.querySelector that takes a wide variety of arguments
-       element === undefined: Use last known active element
-       typeof element == "string": Run document.querySelector (maybe someday uC.test.root.querySelector)
-       else: element should be an HTMLElement
-    */
-    element = element || uC._last_active_element;
-    if (typeof element == "string") {
-      uC._last_query_selector  = element;
-      element = document.querySelector(element);
-      if (element) { element._query_selector = uC._last_query_selector; }
-    }
-    element && element.setAttribute("uc-state",attr);
-    uC._last_active_element = element;
-    return element
-  }
-
-  function urlToCanvas(url,callback) { // maybe I should use a promise?
-    var img = new Image();
-    var canvas = document.createElement("canvas");
-    img.onload = function() {
-      canvas.width = img.width;
-      canvas.height = img.height;
-      canvas.getContext("2d").drawImage(img,0,0);
-      callback(canvas);
-    }
-    img.src = url;
-  }
-
-  /* end utils.js */
-
-  uC.Test = class Test {
-    constructor(f,config) {
-      this.config = config || { wait_ms: 100 };
-      this.name = f._name || f.name;
-      this._main = f;
-      this.run = this.run.bind(this); // got to proxy it so riot doesn't steal it
+      this.context = {};
 
       var fnames = [
-        'click', 'changeValue', 'wait', 'mouseClick', 'assert', 'assertEqual', 'setPath', 'checkResults',
+        'click', 'changeValue', 'wait','mouseClick', 'assert', 'assertNot', 'assertEqual', 'setPath', 'checkResults',
         'debugger', 'ajax'
       ];
       uR.forEach(fnames,function(fname) {
         this[fname] = function() {
-          var f = this["_"+fname];
-          var f2 = f.apply(this,[].slice.apply(arguments));
+          var args = arguments;
+          var f = this["_"+fname].bind(this);
+          var f2 = function() {
+            return f.apply(this,[].slice.apply(args));
+          }.bind(this)
           f2._name = name;
-          this.then(f2);
+          this.then(f2());
           return this;
         }
         // Because `function.name = fname` does nothing, we need:
         Object.defineProperty(this[fname],'name',{value:fname});
       }.bind(this))
-    }
 
-    run() {
-      this.promise = Promise.resolve(true);
-      this.contexts = [];
-      uC.storage.set("__main__",this._main.name);
-      this._main(this);
-      this.ur_status = uR.config.btn_warning; // eventually we'll use something like uC.css, which can be imported dynamically
-      this.then(this.stop);
-      konsole.update()
+      functions.forEach(function (f) { f.bind(self)() });
     }
-
-    stop() {
-      return function stop() {
-        this.ur_status = uR.config.btn_success;
-        konsole.update();
+    get(key) {
+      var self = this;
+      while (self) {
+        if (this.context[key]) { return this.contexts[key] }
+        self = self.parent;
       }
     }
 
+    getLocal(key) {
+      return this.context[key];
+    }
+
+    log() {
+      console.log.apply(this,[this.indent()].concat(Array.prototype.slice.call(arguments)));
+    }
+    error() {
+      //console.error.apply(this,arguments);
+    }
+    indent() { return Array(this.depth+1).join("|"); }
+    then() {
+      uR.forEach(arguments || [],function(f) {
+        var func = (typeof f == 'function')?f:function func() { this.log(f); };
+        this.queue.push(func);
+      }.bind(this));
+      return this;
+    }
+    run() {
+      this.is_ready = true;
+      //this.depth && console.log("");
+      while (this.is_ready && this.step < this.queue.length) {
+        var next = this.queue[this.step];
+        (next.run || next.bind(this))(this); // this is either a test or a function passed in via then
+        ++this.step;
+      }
+    }
+    test() {
+      for (var i=0;i<arguments.length;i++) {
+        this.queue.push(new this.constructor(arguments[i],{parent: this}));
+      }
+      return this
+    }
+    start() { this.run.bind(this)() }
+    stop() { this.is_ready = false; }
+  }
+
+  uC.Test = class Test extends uC.BaseTest {
     waitForThenClick() {
       var args = [].slice.apply(arguments);
       return this.wait.apply(this,args).click.apply(this,args);
     }
 
-    get(key) {
-      var i = this.contexts.length;
-      while (i--) {
-        if (this.contexts[i][key]) { return this.contexts[i][key] }
-      }
-    }
-
-    getLocal(key) {
-      return this.contexts[this.contexts.length-1][key];
-    }
-
     do(message,context) {
       this.then(function() {
-        this.contexts.push(context || {});
+        this.context = context || {};
         konsole.clear();
         konsole.log("DO",message);
       });
       return this;
     }
 
-    then(f,context_override) {
-      // pass through to Promise.then
-      // #! TOOD: needs a method to override default context of function
-      var name = f._name || f.name;
-      if (this.config.wait_ms && name && !name.match(/^(wait|done$|stop$)/)) { this.wait(this.config.wait_ms); }
-      this.promise = this.promise.then(f.bind(this));
-      return this;
-    }
-
-    test(f,context_override) {
-      // execute a sub test
-      this.promise.then(function() {
-        f(this);
-      }.bind(this),context_override);
-      return this;
-    }
-
     done(message) {
       this.then(function done() {
         konsole.log("DONE", message)
-        this.contexts.pop(); // maybe store this somewhere to display in konsole?
       });
       return this;
     }
@@ -159,56 +124,18 @@
 
     _ajax(ajax_options,callback) {
       return function _ajax() {
-        return new Promise(function(resolve,reject) {
-          if (typeof ajax_options == "string") { ajax_options = { url: ajax_options } }
-          var success = ajax_options.success || function() {};
-          ajax_options.success = function(data,request) {
-            success(data,request);
-            (callback(data,request)?resolve:reject)();
-          }
-          uR.ajax(ajax_options);
-        });
-      }
-    }
-
-    _waitForTime(ms,s) {
-      return function waitForTime() {
-        return new Promise(function (resolve, reject) {
-          setTimeout(function () {
-            if (s !== null) { konsole.log('waited',ms,s); }
-            resolve();
-          }, ms);
-        });
-      }
-    }
-
-    _waitForFunction(func,_c) {
-      // #! TODO: these next lines should be generalized
-      var max_ms = (_c||{}).max_ms /* || this.get("max_ms") */ || uC.config.max_ms;
-      var interval_ms = (_c||{}).interval_ms /* || this.get("interval_ms") */ || uC.config.interval_ms;
-      return function waitForFunction() {
-        var name = func._name || func.name;
-        return new Promise(function (resolve, reject) {
-          var start = new Date();
-          var interval = setInterval(function () {
-            var out = func();
-            if (out) {
-              konsole.log('waitForFunction',name);
-              resolve(out);
-              clearInterval(interval)
-              return out
-            }
-            if (new Date() - start > max_ms) {
-              konsole.error(name,new Date() - start);
-              reject()
-              clearInterval(interval);
-            }
-          }, interval_ms);
-        });
+        if (typeof ajax_options == "string") { ajax_options = { url: ajax_options } }
+        var success = ajax_options.success || function() {};
+        ajax_options.success = function(data,request) {
+          success(data,request);
+          (callback(data,request)?resolve:reject)();
+        }
+        uR.ajax(ajax_options);
       }
     }
 
     _wait() {
+      // calls the appropriate wait funciton based on context
       var args = [].slice.apply(arguments);
       var arg0 = args[0];
       if (typeof arg0 == "number") {
@@ -225,8 +152,45 @@
       }
     }
 
+    _waitForTime(ms,s) {
+      var self = this;
+      return function waitForTime() {
+        self.stop();
+        setTimeout(function () {
+          if (s !== null) { konsole.log('waited',ms,s); }
+          self.start();
+        }, ms);
+      }
+    }
+
+    _waitForFunction(func,_c) {
+      // #! TODO: these next lines should be generalized
+      var max_ms = (_c||{}).max_ms /* || this.get("max_ms") */ || uC.config.max_ms;
+      var interval_ms = (_c||{}).interval_ms /* || this.get("interval_ms") */ || uC.config.interval_ms;
+      var self = this;
+      return function waitForFunction() {
+        self.stop();
+        var name = func._name || func.name;
+        var start = new Date();
+        var interval = setInterval(function () {
+          var out = func();
+          if (out) {
+            konsole.log('waitForFunction',name);
+            self.start();
+            clearInterval(interval)
+            return out
+          }
+          if (new Date() - start > max_ms) {
+            konsole.error(name,new Date() - start);
+            clearInterval(interval);
+          }
+        }, interval_ms);
+      }
+    }
+
     _assert(f,name) {
-      return function(resolve,reject) { //#! TODO How do I resolve/reject?
+      return function() { //#! TODO How do I resolve/reject?
+        if (typeof f  == "string") { var qs=f; f = function assertExists() { return uC.find(qs) } }
         var out = f();
         name = name || f.name;
         if (out) {
@@ -234,12 +198,38 @@
         } else {
           konsole.error("ASSERT",name,out);
           console.error("Assertion failed at "+name);
+          this.stop();
+        }
+      }
+    }
+
+    _assertNot(f,name) {
+      // this may seem silly, but it's really useful because it's often times hard to flip the sign of the assertion function
+      return function(resolve,reject) {
+        if (typeof f  == "string") { var qs=f; f = function assertExists() { return uC.find(qs) } }
+        var out = f();
+        name = name || f.name;
+        if (!out) {
+          konsole.log("!ASSERTNOT",name,out);
+        } else {
+          konsole.error("ASSERTNOT",name,out);
+          console.error("Assert not failed at "+name);
+          this.stop();
         }
       }
     }
 
     _assertEqual(f,value) {
-      return this._assert(function assertEqual() { return f() == value } );
+      return function assertEqual() {
+        var out = f();
+        var name = f.name || f._name;
+        if (out == value) {
+          konsole.log("EQUALS",name,out);
+        } else {
+          konsole.error("EQUALS",name,value+" != "+out);
+          console.error("Equals failed at "+name);
+        }
+      }
     }
 
     _debugger() {
@@ -250,7 +240,7 @@
     }
 
     _click(element) {
-      return function click(resolve,reject) {
+      return function click() {
         element = uC.find(element,'clicked');
         try {
           element.click();
@@ -276,11 +266,11 @@
 
         // if they only want one position, why not let position = [x,y]
         if (positions.length == 2 && typeof positions[0] == "number") { positions = [positions] }
-
         uC.mouse.full(element,'mousedown',positions[0]);
-        for (var i=1;i<positions.length;i++) {
+        for (var i=1;i<positions.length-1;i++) {
           uC.mouse.full(element,'mousemove',positions[i]);
         }
+        uC.mouse.full(element,'mousemove',positions[positions.length-1]);
         uC.mouse.full(element,'mouseup',positions[positions.length-1]);
         uC.mouse.full(element,'click',positions[positions.length-1]);
 
@@ -290,7 +280,7 @@
     }
 
     _changeValue(element,value) {
-      return function(resolve,reject) {
+      return function() {
         element = uC.find(element,'changed')
         if (element._query_selector) {
           value = value || this.get(element._query_selector);
@@ -334,3 +324,53 @@
     }
   }
 })();
+
+/*(function() {
+  uC.Test = class Test {
+    constructor(f,config) {
+      this.config = config || { wait_ms: 100 };
+      this.name = f._name || f.name;
+      this._main = f;
+      this.run = this.run.bind(this); // got to proxy it so riot doesn't steal it
+      this.data = {};
+
+    }
+
+    run() {
+      this.promise = Promise.resolve(true);
+      this.contexts = [];
+      uC.storage.set("__main__",this._main.name);
+      this._main(this);
+      this.ur_status = uR.config.btn_warning; // eventually we'll use something like uC.css, which can be imported dynamically
+      this.then(this.stop);
+      konsole.update()
+    }
+
+    stop() {
+      return function stop() {
+        this.ur_status = uR.config.btn_success;
+        konsole.update();
+      }
+    }
+
+
+    then(f,context_override) {
+      // pass through to Promise.then
+      // #! TOOD: needs a method to override default context of function
+      var name = f._name || f.name;
+      if (this.config.wait_ms && name && !name.match(/^(wait|done$|stop$)/)) { this.wait(this.config.wait_ms); }
+      this.promise = this.promise.then(f.bind(this));
+      return this;
+    }
+
+    test(f,context_override) {
+      // execute a sub test
+      this.promise.then(function() {
+        f(this);
+      }.bind(this),context_override);
+      return this;
+    }
+
+  }
+});
+*/
