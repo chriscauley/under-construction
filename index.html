@@ -4,15 +4,25 @@
 
 <script>
 class Test {
-  constructor(isReady,_queue) {
-    this.isReady = isReady || function () { return false };
-    this._queue = _queue || [];
-    this.name = this.isReady.name;
-    this.depth = 0;
-    this._depths = [];
-    this._names = [];
-    this._step = 0;
+  constructor() {
+    /* arguments can be functions or an options object
+       if functions, they are bound and exectuted at the end of this constructor
+       if it's a string, the test will take that as the name
+     */
     var self = this;
+    var options = {};
+    var functions = [];
+    uR.forEach(arguments,function(arg) {
+      if (typeof arg == "object") { options = arg }
+      if (typeof arg == 'function') { functions.push(arg) }
+      if (typeof arg == 'string') { self.name = arg };
+    });
+    this.queue = [];
+    this.name = this.name || (functions.length?functions[0].name:(options.name || "UNNAMED"));
+    this.parent = options.parent;
+    this.depth = this.parent?(this.parent.depth+1):0;
+    this.step = 0;
+    this.run = this.run.bind(this);
 
     uR.forEach(['click','change','check'],function(action) {
       self[action] = function(element,value) {
@@ -20,6 +30,7 @@ class Test {
         return self
       }
     });
+    functions.forEach(function (f) { f.bind(self)() });
   }
   log() {
     console.log.apply(this,[this.indent()].concat(Array.prototype.slice.call(arguments)));
@@ -27,77 +38,75 @@ class Test {
   error() {
     //console.error.apply(this,arguments);
   }
-  indent() { return Array(this._depths[this._step]+1).join("|"); }
+  indent() { return Array(this.depth+1).join("|"); }
   then() {
     uR.forEach(arguments || [],function(f) {
-      this._depths.push(this.depth);
-      this._names.push(this._name);
-      var func = (typeof f == 'function')?f:function() { this.log(f); }
-      this._queue.push(func);
+      var func = (typeof f == 'function')?f:function func() { this.log(f); };
+      this.queue.push(func);
     }.bind(this));
     return this;
   }
   run() {
-    while (this.isReady() && this._step < this._queue.length) {
-      if (this._names[this._step] != this._names[this._step-1]) { console.log(this._names[this._step]) }
-      this._queue[this._step](this);
-      ++this._step;
+    this.is_ready = true;
+    this.depth && console.log("")
+    console.log(this.name);
+    while (this.is_ready && this.step < this.queue.length) {
+      var next = this.queue[this.step];
+      (next.run || next)(this);
+      ++this.step;
     }
   }
   test() {
     for (var i=0;i<arguments.length;i++) {
-      ++this.depth;
-      this._name = arguments[i].name;
-      arguments[i](this);
-      --this.depth;
+      this.queue.push(new this.constructor(arguments[i],{parent: this}));
     }
     return this
   }
-  start() { this.isReady = function() { return true }; this.run() }
-  stop() { this.isReady = function() { return false }; }
+  start() { this.run.bind(this)() }
+  stop() { this.is_ready = false; }
 }
-var my_test = new Test();
-function a(t){ t.log('a')}
-function b(t){ t.log('b')}
-function c(t){ t.log('c')}
-function d(t){ t.log('d')}
-function e(t){ t.log('e')}
-function abcd(t) {
-  t.then(a,b,c,d)
+function a(){ this.log('a')}
+function b(){ this.log('b')}
+function c(){ this.log('c')}
+function d(){ this.log('d')}
+function e(){ this.log('e')}
+function abcd() {
+  this.then(a,b,c,d)
 }
-//r.then(a,a,a).test(abcd).then(d).then(e)
-function login(t) {
-  t.click('login')
+function login() {
+  this.click('login')
     .change('username','name')
     .change('password','pw')
     .click('submit')
     .check('user_id','name')
 }
-function purchaseClass(t) {
-  t.check('cart_exists')
+function purchaseClass() {
+  this.check('cart_exists')
     .test(addToCart,pay)
     .check('cart')
 }
-function addToCart(t) {
-  t.click('classes')
+function addToCart() {
+  this.click('classes')
     .click('add class')
     .check('cart','has_class')
 }
-function pay(t) {
-  t.click('checkout')
+function pay() {
+  this.click('checkout')
     .change('cc')
     .change('exp')
     .change('cvc')
     .click('pay')
 }
-function withdraw(t) {
-  t.click('my_classes')
+function withdraw() {
+  this.click('my_classes')
     .click('withdraw')
     .check('withdrawn')
 }
 
-my_test.test(login,purchaseClass,pay,withdraw);
+var my_test = new Test("MyTest");
+my_test.test(login,purchaseClass,withdraw);
+//my_test.then(a,a,a).test(abcd).then(d).then(e)
 
 
-r.start()
+my_test.start()
 </script>
