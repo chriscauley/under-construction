@@ -15,6 +15,7 @@ var JS_FILES = [
   "src/js/uc-test.js",
   "src/js/mouse.js",
   "src/js/diff.js",
+  "src/js/utils.js",
   ".dist/_tags.js",
 ];
 
