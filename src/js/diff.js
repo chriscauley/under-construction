@@ -4,7 +4,7 @@ window.uC.lib.serialize = function serialize(element,old) {
   var value = element;
   var match = old == value;
   if (value instanceof HTMLElement || value instanceof SVGElement) {
-    match = element.outerHTML == old.outerHTML;
+    match = element.outerHTML == (old && old.outerHTML);
     var value = {
       outerHTML: element.outerHTML,
       className: "HTMLElement",
@@ -16,18 +16,18 @@ window.uC.lib.serialize = function serialize(element,old) {
       canvas.height = element.height;
       canvas.getContext("2d").drawImage(element,0,0);
       value.dataURL = canvas.toDatURL();
-      match = value.dataURL = old.dataURL; // outerHTML does nothing for canvas/img
+      match = value.dataURL == old.dataURL; // outerHTML does nothing for canvas/img
       value.click = function() { window.open(value.dataURL) }
       value.title = "View result in new window"
     } else if (element.tagName.toLowerCase() == "svg") {
       value.outerHTML = value.outerHTML.replace(/id="[^"]"/g,""); // svgs have random ids throughout
       var svg = new Blob([value.outerHTML],{type: 'image/svg+xml'});
-      urlToCanvas(URL.createObjectURL(svg),function(canvas) {
+      uC.utils.urlToCanvas(URL.createObjectURL(svg),function(canvas) {
         value.dataURL = canvas.toDataURL();
       });
       value.click = function() { window.open(value.dataURL) }
       value.title = "View result in new window"
-      match = element.outerHTML == old.outerHTML;
+      match = element.outerHTML == (old && old.outerHTML);
     }
   } else if (typeof value == "string" && value.startsWith("data")) {
     console.error("move dataURL functionality from konsole into here");
@@ -64,8 +64,8 @@ window.uC.lib.showDiff = function(old,serialized) {
     diff_ctx.putImageData(diff,0,0);
     window.open(diff_canvas.toDataURL());
   }
-  urlToCanvas(old.dataURL,function(canvas) { old_canvas = canvas; next(); });
-  urlToCanvas(serialized.dataURL,function(canvas) { new_canvas = canvas; next(); });
+  uC.utils.urlToCanvas(old.dataURL,function(canvas) { old_canvas = canvas; next(); });
+  uC.utils.urlToCanvas(serialized.dataURL,function(canvas) { new_canvas = canvas; next(); });
 }
 
 window.uC.lib.diff = (function() {
@@ -101,8 +101,8 @@ window.uC.lib.diff = (function() {
         diff_ctx.putImageData(diff,0,0);
         callback()
       }
-      urlToCanvas(a.dataURL,function(canvas) { this.a_canvas = canvas; next(); });
-      urlToCanvas(b.dataURL,function(canvas) { this.b_canvas = canvas; next(); });
+      uC.utils.urlToCanvas(a.dataURL,function(canvas) { this.a_canvas = canvas; next(); });
+      uC.uitls.urlToCanvas(b.dataURL,function(canvas) { this.b_canvas = canvas; next(); });
     }
     alertDiff() {
       if (!this.a_canvas && ! this.b_canvas) { return this.prepareDiff(this.alertDiff); }

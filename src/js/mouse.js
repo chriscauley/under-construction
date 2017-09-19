@@ -8,7 +8,7 @@
         eventType,
         true,true,window,null, // canBubble, cancelable, view, detail
         0,0, // screenX, screenY
-        xy[0]+rect.left,xy[1]+rect.top // clientX, clientY
+        Math.ceil(xy[0]+rect.left),Math.ceil(xy[1]+rect.top) // clientX, clientY
       );
       node.dispatchEvent(event);
     },
