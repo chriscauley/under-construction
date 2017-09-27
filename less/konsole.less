@@ -70,6 +70,7 @@ body.konsole-open {
 
 konsole {
   .kwarning { background: #fcf8e3; }
+  .kerror { background: #e88; }
   .u { text-decoration: underline; }
   .pointer {
     border-bottom: 2px solid;
@@ -89,4 +90,21 @@ konsole {
     background: white;
     color: red;
   }
+}
+
+konsole .collection {
+  list-style: none; // this is usually a ul
+  margin: 0;
+  padding: 0;
+  .collection-item {
+    background: rgba(255,255,255,0.2);
+    padding: 5px 10px;
+    margin-bottom: 3px;
+  }
+  .right { float: right; }
+  .collection-toggle {
+    display: none;
+    &:checked + .collection-content { display: block; }
+  }
+  .collection-content { display: none; }
 }

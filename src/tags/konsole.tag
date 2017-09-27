@@ -4,18 +4,15 @@
     _start: function() {
       var k = document.body.appendChild(document.createElement("konsole"));
       riot.mount("konsole");
-      document.body.classList.add("konsole-open");
+      uR.storage.get("KONSOLE_UP") && document.body.classList.add("konsole-open");
+      konsole._start = function() {};
+      setTimeout(function() { document.querySelector("konsole ur-tabs").classList.add("default"); },500)
     },
     schema:[],
   };
   uR.forEach(['log','warn','error','watch','addCommands','toggle'],function(key) {
     konsole[key] = function() {
       konsole._ready.push([key,arguments]);
-      if (key == "toggle") {
-        konsole._start();
-        konsole._start = function() {};
-        setTimeout(function() { document.querySelector("konsole ur-tabs").classList.add("default"); },500)
-      }
     }
   });
   uR._mount_tabs = false;
@@ -23,13 +20,13 @@
     if (event.keyCode == 75 && event.ctrlKey && event.shiftKey) {
       event.preventDefault();
       event.stopPropagation();
-      uR.storage.set("ACTIVE_KONSOLE",!uR.storage.get("ACTIVE_KONSOLE"));
       konsole.toggle();
+      uR.storage.set("ACTIVE_KONSOLE",!document.body.classList.contains("konsole-open"));
       return false;
     }
   }.bind(this));
   uR.ready(function() {
-    if (uR.storage.get("ACTIVE_KONSOLE")) { konsole.toggle(); };
+    if (uR.storage.get("ACTIVE_KONSOLE")) { konsole._start(); };
   });
 })();
 
@@ -49,7 +46,7 @@
       </div>
     </ur-tab>
     <ur-tab title="Settings">
-      <ur-form schema={ konsole.schema }></ur-form>
+      <!--<ur-form schema={ konsole.schema }></ur-form>-->
     </ur-tab>
   </ur-tabs>
   <div class="commands">
@@ -57,9 +54,22 @@
       <button class={ uR.config.btn_success } onclick={ konsole.stop }>
         Auto-Running: { _running } <i class="fa fa-close"></i></button>
     </div>
-    <div each={ command in konsole.commands }>
-      <button class="btn { command.ur_status }" onclick={ command.run }>{ command.name }</button>
-    </div>
+    <ul class="collection">
+      <li class="collection-item { command.ur_status }" each={ command in konsole.commands }>
+        <div class="collection-header">
+          <i class="fa fa-play-circle" onclick={ parent.run }></i>
+          { command.name }
+          <label class="fa fa-plus-circle right" for="command_toggle_{ command.id }"></label>
+        </div>
+        <input class="collection-toggle" type="radio" name="command_toggle" id="command_toggle_{ command.id }" />
+        <div class="collection-content">
+          <div each={ f in command.queue }>
+            { f._description || f._name || f.name }
+          </div>
+        </div>
+      </li>
+      <input class="collection-toggle" type="radio" name="command_toggle" id="command_toggle_none" />
+    </ul>
   </div>
 
   var watch_keys = [];
@@ -75,11 +85,16 @@
     }
   });
 
+  run(e) {
+    uC.storage.set("__main__",e.item.command.name);
+    e.item.command.run();
+  }
+
   toggle(e) {
     var c = "konsole-open";
     var cL = document.body.classList;
     cL[cL.contains(c)?"remove":"add"](c);
-    uR.storage.set("konsole_open",cL.contains(c) || "");
+    uR.storage.set("KONSOLE_UP",cL.contains(c) || "");
   }
   this.on("update",function() {
     this._running = uC.storage.get("__main__");
@@ -125,6 +140,7 @@
           return word; // it was something else, hopefully pre-formatted
         });
         if (a[0] == "WARN") { out.className = "kwarning" }
+        if (a[0] == "ERROR") { out.className = "kerror" }
         out.ts = ts;
         self.log.push(out);
         self.update();
@@ -155,8 +171,12 @@
       addCommands: function() {
         uR.forEach(arguments,function(command) {
           var test = new uC.Test(command);
+          command.id = konsole.commands.length;
           konsole.commands.push(test);
-          if (uC.storage.get("__main__") == command.name) { test.run() }
+          if (uC.storage.get("__main__") == command.name) {
+            uC.__running__ = test;
+            uR.ready(test.run);
+          }
         });
       },
     };
