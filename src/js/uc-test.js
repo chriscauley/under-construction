@@ -8,6 +8,8 @@
       var self = this;
       var options = {};
       var functions = [];
+      this.data = {};
+      this.context = {};
       uR.forEach(arguments,function(arg) {
         if (typeof arg == "object") { options = arg }
         if (typeof arg == 'function') { functions.push(arg) }
@@ -19,8 +21,6 @@
       this.depth = this.parent?(this.parent.depth+1):0;
       this.step = 0;
       this.run = this.run.bind(this);
-
-      this.context = {};
 
       var fnames = [
         'click', 'changeValue', 'wait','mouseClick', 'assert', 'assertNot', 'assertEqual', 'setPath', 'checkResults',
@@ -41,12 +41,15 @@
         Object.defineProperty(this[fname],'name',{value:fname});
       }.bind(this))
 
-      functions.forEach(function (f) { f.bind(self)() });
+      functions.forEach(function (f) {
+        f.bind(self)()
+      });
     }
+
     get(key) {
       var self = this;
       while (self) {
-        if (this.context[key]) { return this.contexts[key] }
+        if (self.context[key]) { return self.context[key] }
         self = self.parent;
       }
     }
@@ -70,6 +73,7 @@
       return this;
     }
     run() {
+      uC._current_test = uC._current_test || this;
       this.is_ready = true;
       //this.depth && console.log("");
       while (this.is_ready && this.step < this.queue.length) {
@@ -95,18 +99,22 @@
     }
 
     do(message,context) {
-      this.then(function() {
+      function f() {
         this.context = context || {};
         konsole.clear();
         konsole.log("DO",message);
-      });
+      };
+      f._name = "DO "+message;
+      this.then(f)
       return this;
     }
 
     done(message) {
-      this.then(function done() {
+      function done() {
         konsole.log("DONE", message)
-      });
+      };
+      done._description = "DONE: " + message;
+      this.then(done);
       return this;
     }
 
@@ -116,7 +124,7 @@
       return function () {
         hash = hash || "#";
         if (pathname != window.location.pathname || hash != window.location.has) {
-          window.location = pathname + (hash || "#");
+          //window.location = pathname + (hash || "#");
         }
         return true;
       };
@@ -147,7 +155,7 @@
       }
       if (typeof arg0 == "string") {
         args[0] = function waitForElement() { return uC.find(arg0,'waiting') }
-        args[0]._name = "waitForElement "+arg0;
+        args[0]._name = args[0]._description = "waitForElement: "+arg0;
         return this._waitForFunction.apply(this,args);
       }
     }
@@ -168,7 +176,7 @@
       var max_ms = (_c||{}).max_ms /* || this.get("max_ms") */ || uC.config.max_ms;
       var interval_ms = (_c||{}).interval_ms /* || this.get("interval_ms") */ || uC.config.interval_ms;
       var self = this;
-      return function waitForFunction() {
+      function waitForFunction() {
         self.stop();
         var name = func._name || func.name;
         var start = new Date();
@@ -180,12 +188,15 @@
             clearInterval(interval)
             return out
           }
+          console.log(new Date() - start > max_ms)
           if (new Date() - start > max_ms) {
             konsole.error(name,new Date() - start);
             clearInterval(interval);
           }
         }, interval_ms);
       }
+      waitForFunction._description = func._description || ("Wait: "+(func._name || func.name)+"()");
+      return waitForFunction;
     }
 
     _assert(f,name) {
@@ -220,7 +231,7 @@
     }
 
     _assertEqual(f,value) {
-      return function assertEqual() {
+      function assertEqual() {
         var out = f();
         var name = f.name || f._name;
         if (out == value) {
@@ -230,6 +241,8 @@
           console.error("Equals failed at "+name);
         }
       }
+      assertEqual._description = "assert: "+f.name+"() == "+value;
+      return assertEqual
     }
 
     _debugger() {
@@ -240,7 +253,7 @@
     }
 
     _click(element) {
-      return function click() {
+      function click() {
         element = uC.find(element,'clicked');
         try {
           element.click();
@@ -251,6 +264,8 @@
         }
         konsole.log("clicked",element._query_selector);
       }
+      click._description = "Click: " + (element || "LAST");
+      return click
     }
 
     _mouseClick(element,positions) {
@@ -280,7 +295,7 @@
     }
 
     _changeValue(element,value) {
-      return function() {
+      var changeValue = function changeValue() {
         element = uC.find(element,'changed')
         if (element._query_selector) {
           value = value || this.get(element._query_selector);
@@ -296,9 +311,16 @@
         }
         konsole.log("changed",element._query_selector);
       }.bind(this);
+      changeValue._description = "Change: " + element || "LAST";
+      changeValue._name = "change";
+      return changeValue;
     }
 
     _checkResults(key,value_func) {
+      value_func = value_func || function() {
+        console.log(uC.find(key));
+        return uC.find(key,"result").innerText;
+      }
       return function(resolve,reject) {
         var value = value_func();
         var old = uC.results.get(key);
@@ -312,7 +334,7 @@
             className: "diff",
             _name: "diff",
             title: "View diff in new window",
-            click: uC.lib.showDiff
+            click: function() { uC.lib.showDiff(old,serialized); },
           }
           function replace(){
             uC.results.set(key,serialized);
@@ -339,7 +361,6 @@
     run() {
       this.promise = Promise.resolve(true);
       this.contexts = [];
-      uC.storage.set("__main__",this._main.name);
       this._main(this);
       this.ur_status = uR.config.btn_warning; // eventually we'll use something like uC.css, which can be imported dynamically
       this.then(this.stop);

@@ -36,6 +36,13 @@ window.uC.lib.serialize = function serialize(element,old) {
 }
 
 window.uC.lib.showDiff = function(old,serialized) {
+  old = old || "";
+  if (typeof old == typeof serialized && typeof old == "string") {
+    var diff = JsDiff.diffLines(old,serialized);
+    console.log(diff);
+    uR.alert("<pre>"+diff[0].value+"</pre>");
+    return
+  }
   if (!old.dataURL || !serialized.dataURL) {
     alert("Currently can only diff two images, sorry");
     throw "Not Implemented";
