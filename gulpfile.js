@@ -11,6 +11,8 @@ var babel = require('gulp-babel');
 var PROJECT_NAME = "uc";
 
 var JS_FILES = [
+  "lib/diff.js",
+  "lib/pixelmatch.js",
   "src/js/under-construction.js",
   "src/js/uc-test.js",
   "src/js/mouse.js",

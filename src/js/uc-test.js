@@ -188,7 +188,6 @@
             clearInterval(interval)
             return out
           }
-          console.log(new Date() - start > max_ms)
           if (new Date() - start > max_ms) {
             konsole.error(name,new Date() - start);
             clearInterval(interval);
@@ -318,15 +317,15 @@
 
     _checkResults(key,value_func) {
       value_func = value_func || function() {
-        console.log(uC.find(key));
-        return uC.find(key,"result").innerText;
+        return uC.find(key,"result");
       }
       return function(resolve,reject) {
         var value = value_func();
         var old = uC.results.get(key);
         if (old && old.dataURL) { old.click = function() { window.open(old.dataURL) } }
         var serialized, match;
-        [serialized,match] = uC.lib.serialize(value,old); // convert it to a serialized object
+        serialized = uC.lib.serialize(value); // convert it to a serialized object
+        match = old && (old.hash == serialized.hash);
         if (match) {
           konsole.log("Result: "+key,serialized);
         } else {
