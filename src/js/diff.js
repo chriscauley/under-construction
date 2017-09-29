@@ -1,6 +1,7 @@
 window.uC.lib = window.uC.lib || {};
 
-window.uC.lib.serialize = function serialize(element,old) {
+//old serializer function using canvas/img ... will be used again someday
+/*window.uC.lib.serialize = function serialize(element,old) {
   var value = element;
   var match = old == value;
   if (value instanceof HTMLElement || value instanceof SVGElement) {
@@ -33,21 +34,41 @@ window.uC.lib.serialize = function serialize(element,old) {
     console.error("move dataURL functionality from konsole into here");
   }
   return [value,match]
+}*/
+
+window.uC.lib.serialize = function serialize(obj) {
+  if (obj instanceof HTMLElement) {
+    return {
+      type: "HTMLElement",
+      outerHTML: obj.outerHTML,
+      display: obj.innerText,
+      hash: objectHash(obj.outerHTML),
+    }
+  }
+  if (typeof obj == "string") {
+    return {
+      type: 'string',
+      display: obj,
+      hash: objectHash(obj)
+    }
+  }
+  return {}
 }
 
 window.uC.lib.showDiff = function(old,serialized) {
   old = old || "";
-  if (typeof old == typeof serialized && typeof old == "string") {
-    var diff = JsDiff.diffLines(old,serialized);
-    console.log(diff);
-    uR.alert("<pre>"+diff[0].value+"</pre>");
+  if (serialized.type == "HTMLElement") {
+    var diff = JsDiff.diffLines(old.display,serialized.display);
+    uR.alertElement("ur-tabs",{
+      tabs: [
+        { title: "old/new", innerHTML: "<div class='flexy'><pre>"+old.display+"</pre><pre>"+serialized.dispaly+"</pre>" },
+        { title: "diff", innerHTML: "<pre>"+diff[0].value+"</pre>" }
+      ]
+    });
     return
   }
-  if (!old.dataURL || !serialized.dataURL) {
-    alert("Currently can only diff two images, sorry");
-    throw "Not Implemented";
-  }
-  if (!window.pixelmatch) {
+  // The following if for diffing images, but is not using new style serializers
+  /*if (!window.pixelmatch) {
     throw "Attempted to diff images w/o pixelmatch";
   }
   var old_canvas,new_canvas;
@@ -72,7 +93,7 @@ window.uC.lib.showDiff = function(old,serialized) {
     window.open(diff_canvas.toDataURL());
   }
   uC.utils.urlToCanvas(old.dataURL,function(canvas) { old_canvas = canvas; next(); });
-  uC.utils.urlToCanvas(serialized.dataURL,function(canvas) { new_canvas = canvas; next(); });
+  uC.utils.urlToCanvas(serialized.dataURL,function(canvas) { new_canvas = canvas; next(); });*/
 }
 
 window.uC.lib.diff = (function() {
