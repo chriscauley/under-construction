@@ -65,7 +65,7 @@
           <label class="fa fa-minus-circle right" for="command_toggle_null"></label>
         </div>
         <div class="collection-content">
-          <div each={ f in command.queue }>
+          <div each={ f in command.queue } class={ f.status }>
             { f._description || f._name || f.name }
           </div>
         </div>

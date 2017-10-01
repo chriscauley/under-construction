@@ -75,12 +75,18 @@
     run() {
       uC._current_test = uC._current_test || this;
       this.is_ready = true;
+      var last;
       //this.depth && console.log("");
       while (this.is_ready && this.step < this.queue.length) {
+        last = this.queue[this.step-1];
+        if (last) { last.status = 'complete'; }
         var next = this.queue[this.step];
+        next.status = 'running';
         (next.run || next.bind(this))(this); // this is either a test or a function passed in via then
         ++this.step;
+        konsole.update();
       }
+      if (this.step == this.queue.length && last) { last.status = 'complete'; konsole.update() }
     }
     test() {
       for (var i=0;i<arguments.length;i++) {
@@ -321,7 +327,7 @@
         key = key || uC._last_query_selector;
         return out;
       }
-      return function(resolve,reject) {
+      return function checkResults(resolve,reject) {
         var value = value_func();
         var old = uC.results.get(key);
         if (old && old.dataURL) { old.click = function() { window.open(old.dataURL) } }
