@@ -102,9 +102,17 @@ konsole .collection {
     margin-bottom: 3px;
   }
   .right { float: right; }
+  label { cursor: pointer; }
+  [for="command_toggle_null"] { display: none; }
   .collection-toggle {
     display: none;
-    &:checked + .collection-content { display: block; }
+    &:checked {
+      ~ .collection-content { display: block; }
+      ~ .collection-header {
+        [for="command_toggle_null"] { display: block; }
+        .command-toggle { display: none; }
+      }
+    }
   }
   .collection-content { display: none; }
 }

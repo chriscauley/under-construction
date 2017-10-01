@@ -54,21 +54,22 @@
       <button class={ uR.config.btn_success } onclick={ konsole.stop }>
         Auto-Running: { _running } <i class="fa fa-close"></i></button>
     </div>
+    <input class="collection-toggle" type="radio" name="command_toggle" id="command_toggle_null" />
     <ul class="collection">
       <li class="collection-item { command.ur_status }" each={ command in konsole.commands }>
+        <input class="collection-toggle" type="radio" name="command_toggle" id="command_toggle_{ command.id }" />
         <div class="collection-header">
           <i class="fa fa-play-circle" onclick={ parent.run }></i>
           { command.name }
-          <label class="fa fa-plus-circle right" for="command_toggle_{ command.id }"></label>
+          <label class="fa fa-plus-circle right command-toggle" for="command_toggle_{ command.id }"></label>
+          <label class="fa fa-minus-circle right" for="command_toggle_null"></label>
         </div>
-        <input class="collection-toggle" type="radio" name="command_toggle" id="command_toggle_{ command.id }" />
         <div class="collection-content">
           <div each={ f in command.queue }>
             { f._description || f._name || f.name }
           </div>
         </div>
       </li>
-      <input class="collection-toggle" type="radio" name="command_toggle" id="command_toggle_none" />
     </ul>
   </div>
 
@@ -171,7 +172,7 @@
       addCommands: function() {
         uR.forEach(arguments,function(command) {
           var test = new uC.Test(command);
-          command.id = konsole.commands.length;
+          test.id = konsole.commands.length;
           konsole.commands.push(test);
           if (uC.storage.get("__main__") == command.name) {
             uC.__running__ = test;
