@@ -41,7 +41,7 @@ window.uC.lib.serialize = function serialize(obj) {
     return {
       type: "HTMLElement",
       outerHTML: obj.outerHTML,
-      display: obj.innerText,
+      display: uR.escapeHTML(obj.innerText),
       hash: objectHash(obj.outerHTML),
     }
   }
@@ -58,11 +58,19 @@ window.uC.lib.serialize = function serialize(obj) {
 window.uC.lib.showDiff = function(old,serialized) {
   old = old || "";
   if (serialized.type == "HTMLElement") {
-    var diff = JsDiff.diffLines(old.display,serialized.display);
-    uR.alertElement("ur-tabs",{
+    var diff = JsDiff.diffLines(old.display||"",serialized.display);
+    var comparison = "";
+    uR.forEach(diff, function(d) {
+      comparison += "<div class='"+(d.added && "added" || d.removed && "removed")+"'>"+d.value+"</div>";
+    });
+    var left = "<pre class='col-6'><b>Old:</b>\n"+(old.display||"<i>[empty string]</i>")+"</pre>"
+    var right = "<pre class='col-6'><b>New:</b>\n"+serialized.display+"</pre>"
+    uR.alertElement("ur-tabs", {
+      className: 'uc default',
       tabs: [
-        { title: "old/new", innerHTML: "<div class='flexy'><pre>"+old.display+"</pre><pre>"+serialized.dispaly+"</pre>" },
-        { title: "diff", innerHTML: "<pre>"+diff[0].value+"</pre>" }
+        // #! TODO: column/row classes should be configurable... maybe?
+        { title: "old/new", innerHTML: "<div class='flexy'>" + left + right + "</div>" },
+        { title: "diff", innerHTML: "<pre>"+comparison+"</pre>" }
       ]
     });
     return

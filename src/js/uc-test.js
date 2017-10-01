@@ -317,7 +317,9 @@
 
     _checkResults(key,value_func) {
       value_func = value_func || function() {
-        return uC.find(key,"result");
+        var out = uC.find(key,"result");
+        key = key || uC._last_query_selector;
+        return out;
       }
       return function(resolve,reject) {
         var value = value_func();
@@ -327,7 +329,7 @@
         serialized = uC.lib.serialize(value); // convert it to a serialized object
         match = old && (old.hash == serialized.hash);
         if (match) {
-          konsole.log("Result: "+key,serialized);
+          konsole.log(`Result: ${key} is unchanged`);
         } else {
           var diff = {
             className: "diff",

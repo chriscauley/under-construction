@@ -1,5 +1,5 @@
 @import "konsole.less";
-
+/* #! TODO: this should be in some sort of isolated class */
 /*
 [uc-state] {
   filter: contrast(0) sepia(100%) hue-rotate(116deg) brightness(1.4) saturate(0.28);
@@ -36,4 +36,15 @@ ur-tab {
 
 ur-tabs > [ur-mask] + .tab-wrapper > { /* we are in a modal! */
   ur-tab, .tab-anchors a { background: var(--body-bg-color); }
+}
+
+ur-tabs.uc { /* currently only used */
+  pre {
+    .added { background: #ddffdd; }
+    .removed { background: #ffdddd; }
+  }
+  .flexy {
+    display: flex;
+    .col-6 { flex-basis: 50%; }
+  }
 }
