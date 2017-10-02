@@ -15,7 +15,8 @@
         if (typeof arg == 'function') { functions.push(arg) }
         if (typeof arg == 'string') { self.name = arg };
       });
-      this.queue = [];
+      this.queue = [];  // functions/test to execute
+      this.completed = []; // strings of completed queue objects
       this.name = this.name || (functions.length?functions[0].name:(options.name || "UNNAMED"));
       this.parent = options.parent;
       this.depth = this.parent?(this.parent.depth+1):0;
@@ -44,6 +45,10 @@
       functions.forEach(function (f) {
         f.bind(self)()
       });
+    }
+
+    getStateHash() {
+      return objectHash(this.completed)
     }
 
     get(key) {
@@ -79,7 +84,10 @@
       //this.depth && console.log("");
       while (this.is_ready && this.step < this.queue.length) {
         last = this.queue[this.step-1];
-        if (last) { last.status = 'complete'; }
+        if (last) {
+          last.status = 'complete';
+          this.completed.push(last._name || last.name);
+        }
         var next = this.queue[this.step];
         next.status = 'running';
         (next.run || next.bind(this))(this); // this is either a test or a function passed in via then
@@ -127,10 +135,14 @@
     /* after this are private methods, eg Test().action(args) is a wrapper around Test().then(_action(args)) */
 
     _setPath(pathname,hash) {
+      if (!hash && ~pathname.indexOf("#")) {
+        [pathname,hash] = pathname.split("#");
+      }
       return function () {
         hash = hash || "#";
-        if (pathname != window.location.pathname || hash != window.location.has) {
-          //window.location = pathname + (hash || "#");
+        if (!hash.indexOf("#") == 0) { hash = "#" + hash }
+        if (pathname != window.location.pathname || hash != window.location.hash) {
+          window.location = pathname + hash;
         }
         return true;
       };
@@ -324,18 +336,20 @@
     _checkResults(key,value_func) {
       value_func = value_func || function() {
         var out = uC.find(key,"result");
-        key = key || uC._last_query_selector;
         return out;
       }
       return function checkResults(resolve,reject) {
         var value = value_func();
-        var old = uC.results.get(key);
+        key = key || uC._last_query_selector;
+        var composit_key = key + "@" + this.getStateHash();
+        console.log(composit_key);
+        var old = uC.results.get(composit_key);
         if (old && old.dataURL) { old.click = function() { window.open(old.dataURL) } }
         var serialized, match;
         serialized = uC.lib.serialize(value); // convert it to a serialized object
         match = old && (old.hash == serialized.hash);
         if (match) {
-          konsole.log(`Result: ${key} is unchanged`);
+          konsole.log("Result: ",composit_key," is unchanged");
         } else {
           var diff = {
             className: "diff",
@@ -344,10 +358,10 @@
             click: function() { uC.lib.showDiff(old,serialized); },
           }
           function replace(){
-            uC.results.set(key,serialized);
+            uC.results.set(composit_key,serialized);
             return "updated!"
           }
-          konsole.warn("Result changed",key,old,serialized,diff,replace);
+          konsole.warn("Result changed",composit_key,old,serialized,diff,replace);
         }
       }
     }

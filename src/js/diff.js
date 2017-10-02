@@ -60,17 +60,22 @@ window.uC.lib.showDiff = function(old,serialized) {
   if (serialized.type == "HTMLElement") {
     var diff = JsDiff.diffLines(old.display||"",serialized.display);
     var comparison = "";
-    uR.forEach(diff, function(d) {
-      comparison += "<div class='"+(d.added && "added" || d.removed && "removed")+"'>"+d.value+"</div>";
-    });
-    var left = "<pre class='col-6'><b>Old:</b>\n"+(old.display||"<i>[empty string]</i>")+"</pre>"
-    var right = "<pre class='col-6'><b>New:</b>\n"+serialized.display+"</pre>"
+    function compare(a,b,func) {
+      var comparison = "";
+      var diff = JsDiff.diffLines(func(a) || "<i>[EMPTY STRING]</i>",func(b) || "<i>[EMPTY STRING]</i>");
+      uR.forEach(diff, function(d) {
+        comparison += "<div class='"+(d.added && "added" || d.removed && "removed")+"'>"+d.value+"</div>";
+      });
+      return "<div class='flexy'><pre>"+comparison+"</pre></div>";
+    }
     uR.alertElement("ur-tabs", {
       className: 'uc default',
       tabs: [
         // #! TODO: column/row classes should be configurable... maybe?
-        { title: "old/new", innerHTML: "<div class='flexy'>" + left + right + "</div>" },
-        { title: "diff", innerHTML: "<pre>"+comparison+"</pre>" }
+        { title: "html", innerHTML: compare(old,serialized,function(s) {
+          return uR.escapeHTML(html_beautify(s.outerHTML,{indent_size: 2}))
+        }) },
+        { title: "text", innerHTML: compare(old,serialized,function(s) { return s.display }) },
       ]
     });
     return
