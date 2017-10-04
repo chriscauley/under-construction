@@ -45,6 +45,7 @@
       functions.forEach(function (f) {
         f.bind(self)()
       });
+      uC.tests.get(this.name) && this.markPassed();
     }
 
     getStateHash() {
@@ -89,12 +90,21 @@
           this.completed.push(last._name || last.name);
         }
         var next = this.queue[this.step];
-        next.status = 'running';
+        this.status = next.status = 'running';
         (next.run || next.bind(this))(this); // this is either a test or a function passed in via then
         ++this.step;
         konsole.update();
       }
-      if (this.step == this.queue.length && last) { last.status = 'complete'; konsole.update() }
+      if (this.step == this.queue.length && last) {
+        last.status = 'complete';
+        this.markPassed()
+      }
+    }
+    markPassed() {
+      this.status = "passed";
+      uC.tests.set(this.name,"passed");
+      (uC.storage.get("__main__") == this.name) && uC.storage.set("__main__",null)
+      konsole.update();
     }
     test() {
       for (var i=0;i<arguments.length;i++) {
@@ -342,7 +352,6 @@
         var value = value_func();
         key = key || uC._last_query_selector;
         var composit_key = key + "@" + this.getStateHash();
-        console.log(composit_key);
         var old = uC.results.get(composit_key);
         if (old && old.dataURL) { old.click = function() { window.open(old.dataURL) } }
         var serialized, match;
@@ -367,52 +376,3 @@
     }
   }
 })();
-
-/*(function() {
-  uC.Test = class Test {
-    constructor(f,config) {
-      this.config = config || { wait_ms: 100 };
-      this.name = f._name || f.name;
-      this._main = f;
-      this.run = this.run.bind(this); // got to proxy it so riot doesn't steal it
-      this.data = {};
-
-    }
-
-    run() {
-      this.promise = Promise.resolve(true);
-      this.contexts = [];
-      this._main(this);
-      this.ur_status = uR.config.btn_warning; // eventually we'll use something like uC.css, which can be imported dynamically
-      this.then(this.stop);
-      konsole.update()
-    }
-
-    stop() {
-      return function stop() {
-        this.ur_status = uR.config.btn_success;
-        konsole.update();
-      }
-    }
-
-
-    then(f,context_override) {
-      // pass through to Promise.then
-      // #! TOOD: needs a method to override default context of function
-      var name = f._name || f.name;
-      if (this.config.wait_ms && name && !name.match(/^(wait|done$|stop$)/)) { this.wait(this.config.wait_ms); }
-      this.promise = this.promise.then(f.bind(this));
-      return this;
-    }
-
-    test(f,context_override) {
-      // execute a sub test
-      this.promise.then(function() {
-        f(this);
-      }.bind(this),context_override);
-      return this;
-    }
-
-  }
-});
-*/

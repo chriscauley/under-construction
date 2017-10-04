@@ -54,9 +54,9 @@
       <button class={ uR.config.btn_success } onclick={ konsole.stop }>
         Auto-Running: { _running } <i class="fa fa-close"></i></button>
     </div>
-    <input class="collection-toggle" type="radio" name="command_toggle" id="command_toggle_null" />
-    <ul class="collection">
-      <li class="collection-item { command.ur_status }" each={ command in konsole.commands }>
+    <div class="collection">
+      <input class="collection-toggle" type="radio" name="command_toggle" id="command_toggle_null" />
+      <li class="collection-item { command.status }" each={ command in konsole.commands }>
         <input class="collection-toggle" type="radio" name="command_toggle" id="command_toggle_{ command.id }" />
         <div class="collection-header">
           <i class="fa fa-play-circle" onclick={ parent.run }></i>
@@ -70,7 +70,7 @@
           </div>
         </div>
       </li>
-    </ul>
+    </div>
   </div>
 
   var watch_keys = [];
