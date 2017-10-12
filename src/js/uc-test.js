@@ -302,30 +302,39 @@
       return click
     }
 
-    _mouseClick(element,positions) {
+    _mouseClick(element,xys) {
       /* Like uR.test.click, but can specify xy with at various positions
          Positions are [[x0,y0],[x1,y1]...] corresponding to:
          [mousedown,mousemove1,mousemove2...mouseup/click]
          mousedown: always the first value
          mousemove(s): everything except the mousedown, possibly []
-         mouseup/click: Both events fire in same place, always last value (even positions.length==1)
+         mouseup/click: Both events fire in same place, always last value (even xys.length==1)
       */
-      return function(resolve,reject) {
+      if (xys.length == 2 && typeof xys[0] == "number") {
+        xys = [xys];
+        var s = `(${xys[0]})`;
+      } else {
+        // #! TODO if xys.length == 10 show something like `(xy0) 8>> (xy-1)`
+        var a = xys[0], b = xys[xys.length-1];
+        var s = `(${a[0].toFixed(0)},${a[1].toFixed(0)}) > (${b[0].toFixed(0)},${b[1].toFixed(0)})`;
+      }
+      function mouseClick(resolve,reject) {
         element = uC.find(element,'mouseClicked');
 
         // if they only want one position, why not let position = [x,y]
-        if (positions.length == 2 && typeof positions[0] == "number") { positions = [positions] }
-        uC.mouse.full(element,'mousedown',positions[0]);
-        for (var i=1;i<positions.length-1;i++) {
-          uC.mouse.full(element,'mousemove',positions[i]);
+        uC.mouse.full(element,'mousedown',xys[0]);
+        for (var i=1;i<xys.length-1;i++) {
+          uC.mouse.full(element,'mousemove',xys[i]);
         }
-        uC.mouse.full(element,'mousemove',positions[positions.length-1]);
-        uC.mouse.full(element,'mouseup',positions[positions.length-1]);
-        uC.mouse.full(element,'click',positions[positions.length-1]);
+        uC.mouse.full(element,'mousemove',xys[xys.length-1]);
+        uC.mouse.full(element,'mouseup',xys[xys.length-1]);
+        uC.mouse.full(element,'click',xys[xys.length-1]);
 
         // in total this is down (1) + move (length) + up (1) + click (1) moves, or length+2
-        konsole.log("triggered "+positions.length+2+" mouse moves",element)
+        konsole.log("triggered "+(xys.length+2)+" mouse moves",element)
       }
+      mouseClick._name = "mouseClick "+ s;
+      return mouseClick;
     }
 
     _changeValue(element,value) {
