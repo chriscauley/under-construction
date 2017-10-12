@@ -86,6 +86,15 @@
       var last;
       //this.depth && console.log("");
       while (this.is_ready && this.step < this.queue.length) {
+        if (this.wait_next) {
+          this.wait_next = false;
+          this.is_ready = false;
+          setTimeout(function() {
+            this.is_ready = true;
+            this.run();
+          }.bind(this),250);
+          break;
+        }
         last = this.queue[this.step-1];
         if (last) {
           last.status = 'complete';
@@ -97,6 +106,7 @@
         (next.run || next.bind(this))(this); // this is either a test or a function passed in via then
         ++this.step;
         konsole.update();
+        this.wait_next = true;
       }
       if (this.step == this.queue.length && this.queue.length) {
         this.queue[this.queue.length-1].status = "passed";
