@@ -56,9 +56,9 @@
     </div>
     <div class="collection">
       <input class="collection-toggle" type="radio" name="command_toggle" id="command_toggle_null" />
-      <li class="collection-item { command.status }" each={ command in konsole.commands }>
+      <li class="collection-item" each={ command in konsole.commands }>
         <input class="collection-toggle" type="radio" name="command_toggle" id="command_toggle_{ command.id }" />
-        <div class="collection-header">
+        <div class="collection-header { command.status }">
           <i class="fa fa-play-circle" onclick={ parent.run }></i>
           { command.name }
           <label class="fa fa-plus-circle right command-toggle" for="command_toggle_{ command.id }"></label>
