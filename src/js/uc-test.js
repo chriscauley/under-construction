@@ -45,11 +45,13 @@
       functions.forEach(function (f) {
         f.bind(self)()
       });
-      uC.tests.get(this.name) && this.markPassed();
+      this.mark(uC.tests.get(this.name));
+      this.getStateHash()
     }
 
-    getStateHash() {
-      return objectHash(this.completed)
+    getStateHash(name) {
+      name = name || this.name;
+      return name+"@"+objectHash(this.completed)
     }
 
     get(key) {
@@ -88,6 +90,7 @@
         if (last) {
           last.status = 'complete';
           this.completed.push(last._name || last.name);
+          uC.tests.set(this.getStateHash(),"complete");
         }
         var next = this.queue[this.step];
         this.status = next.status = 'running';
@@ -95,15 +98,16 @@
         ++this.step;
         konsole.update();
       }
-      if (this.step == this.queue.length && last) {
-        last.status = 'complete';
-        this.markPassed()
+      if (this.step == this.queue.length && this.queue.length) {
+        this.queue[this.queue.length-1].status = "passed";
+        this.mark('passed')
       }
     }
-    markPassed() {
-      this.status = "passed";
-      uC.tests.set(this.name,"passed");
+    mark(status) {
+      this.status = status;
+      uC.tests.set(this.name,status);
       (uC.storage.get("__main__") == this.name) && uC.storage.set("__main__",null)
+      this.is_ready = false;
       konsole.update();
     }
     test() {
@@ -123,6 +127,7 @@
     }
 
     do(message,context) {
+      message = message || this.name;
       function f() {
         this.context = context || {};
         konsole.clear();
@@ -134,6 +139,7 @@
     }
 
     done(message) {
+      message = message || this.name;
       function done() {
         konsole.log("DONE", message)
       };
@@ -217,6 +223,7 @@
             return out
           }
           if (new Date() - start > max_ms) {
+            self.mark('failed');
             konsole.error(name,new Date() - start);
             clearInterval(interval);
           }
@@ -349,9 +356,9 @@
         return out;
       }
       return function checkResults(resolve,reject) {
-        var value = value_func();
         key = key || uC._last_query_selector;
-        var composit_key = key + "@" + this.getStateHash();
+        var value = value_func();
+        var composit_key = this.getStateHash(key);
         var old = uC.results.get(composit_key);
         if (old && old.dataURL) { old.click = function() { window.open(old.dataURL) } }
         var serialized, match;
