@@ -22,6 +22,7 @@
       this.depth = this.parent?(this.parent.depth+1):0;
       this.step = 0;
       this.run = this.run.bind(this);
+      uC.__selectors = uC.__selectors || {};
 
       var fnames = [
         'click', 'changeValue', 'wait','mouseClick', 'assert', 'assertNot', 'assertEqual', 'setPath', 'checkResults',
@@ -31,6 +32,7 @@
         this[fname] = function() {
           var args = arguments;
           var f = this["_"+fname].bind(this);
+          if (typeof arguments[0] == "string") { uC.__selectors[arguments[0]] = 1; }
           var f2 = function() {
             return f.apply(this,[].slice.apply(args));
           }.bind(this)
@@ -312,7 +314,7 @@
       return click
     }
 
-    _mouseClick(element,xys) {
+    _mouseClick(element,xys,opts) {
       /* Like uR.test.click, but can specify xy with at various positions
          Positions are [[x0,y0],[x1,y1]...] corresponding to:
          [mousedown,mousemove1,mousemove2...mouseup/click]
@@ -320,6 +322,7 @@
          mousemove(s): everything except the mousedown, possibly []
          mouseup/click: Both events fire in same place, always last value (even xys.length==1)
       */
+      opts = opts || {};
       if (xys.length == 2 && typeof xys[0] == "number") {
         xys = [xys];
         var s = `(${xys[0]})`;
@@ -332,13 +335,13 @@
         element = uC.find(element,'mouseClicked');
 
         // if they only want one position, why not let position = [x,y]
-        uC.mouse.full(element,'mousedown',xys[0]);
+        uC.mouse.full(element,'mousedown',xys[0],opts);
         for (var i=1;i<xys.length-1;i++) {
-          uC.mouse.full(element,'mousemove',xys[i]);
+          uC.mouse.full(element,'mousemove',xys[i],opts);
         }
-        uC.mouse.full(element,'mousemove',xys[xys.length-1]);
-        uC.mouse.full(element,'mouseup',xys[xys.length-1]);
-        uC.mouse.full(element,'click',xys[xys.length-1]);
+        uC.mouse.full(element,'mousemove',xys[xys.length-1],opts);
+        uC.mouse.full(element,'mouseup',xys[xys.length-1],opts);
+        uC.mouse.full(element,'click',xys[xys.length-1],opts);
 
         // in total this is down (1) + move (length) + up (1) + click (1) moves, or length+2
         konsole.log("triggered "+(xys.length+2)+" mouse moves",element)
