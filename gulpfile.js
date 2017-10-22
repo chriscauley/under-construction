@@ -18,6 +18,7 @@ var JS_FILES = [
   "src/js/mouse.js",
   "src/js/diff.js",
   "src/js/utils.js",
+  "src/js/record.js",
   ".dist/_tags.js",
 ];
 
