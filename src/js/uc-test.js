@@ -21,12 +21,13 @@
       this.parent = options.parent;
       this.depth = this.parent?(this.parent.depth+1):0;
       this.step = 0;
+      this.delay = 250;
       this.run = this.run.bind(this);
       uC.__selectors = uC.__selectors || {};
 
       var fnames = [
-        'click', 'changeValue', 'wait','mouseClick', 'assert', 'assertNot', 'assertEqual', 'setPath', 'checkResults',
-        'debugger', 'ajax'
+        'click', 'changeValue', 'changeForm', 'wait','mouseClick', 'assert', 'assertNot', 'assertEqual', 'setPath',
+        'checkResults', 'debugger', 'ajax'
       ];
       uR.forEach(fnames,function(fname) {
         this[fname] = function() {
@@ -84,35 +85,40 @@
     }
     run() {
       uC._current_test = uC._current_test || this;
-      this.is_ready = true;
-      var last;
-      //this.depth && console.log("");
-      while (this.is_ready && this.step < this.queue.length) {
-        if (this.wait_next) {
-          this.wait_next = false;
-          this.is_ready = false;
-          setTimeout(function() {
-            this.is_ready = true;
-            this.run();
-          }.bind(this),250);
-          break;
+      var self = this;
+      if (this.is_ready && this.step < this.queue.length) {
+        if (this.next_move && new Date().valueOf() < this.next_move) {
+          setTimeout(this.run, this.next_move - new Date().valueOf())
+          return;
         }
-        last = this.queue[this.step-1];
-        if (last) {
-          last.status = 'complete';
-          this.completed.push(last._name || last.name);
-          uC.tests.set(this.getStateHash(),"complete");
+        var next = this.queue[this.step]; // this is either a test or a function passed in via then
+        function resolve(options) {
+          options = options || {};
+          next.status = options.status || "complete";
+          self.completed.push(next._name || next.name);
+          uC.tests.set(self.getStateHash(),next.status);
+          self.step++;
+          self.next_move = self.delay && new Date().valueOf() + self.delay;
+          self.run();
+        }
+        function reject() {
         }
         var next = this.queue[this.step];
         this.status = next.status = 'running';
-        (next.run || next.bind(this))(this); // this is either a test or a function passed in via then
-        ++this.step;
+
+        var result;
+        try {
+          result = (next.start || next.bind(this))(resolve,reject);
+        } catch(e) {
+          reject(e);
+        }
+        result && resolve(result); // test functions that return truthy objects move to next test
         konsole.update();
-        this.wait_next = true;
       }
       if (this.step == this.queue.length && this.queue.length) {
         this.queue[this.queue.length-1].status = "passed";
-        this.mark('passed')
+        this.mark('passed');
+        this.parent_resolve && parent_resolve;
       }
     }
     mark(status) {
@@ -128,7 +134,12 @@
       }
       return this
     }
-    start() { this.run.bind(this)() }
+    start(resolve,reject) {
+      this.resolve = resolve || this.resolve;
+      this.reject = reject || this.reject;
+      this.is_ready = true;
+      this.run.bind(this)()
+    }
     stop() { this.is_ready = false; }
   }
 
@@ -140,10 +151,11 @@
 
     do(message,context) {
       message = message || this.name;
-      function f() {
+      function f(resolve,reject) {
         this.context = context || {};
         konsole.clear();
         konsole.log("DO",message);
+        resolve();
       };
       f._name = "DO "+message;
       this.then(f)
@@ -152,8 +164,9 @@
 
     done(message) {
       message = message || this.name;
-      function done() {
-        konsole.log("DONE", message)
+      function done(resolve,reject) {
+        konsole.log("DONE", message);
+        resolve();
       };
       done._description = "DONE: " + message;
       this.then(done);
@@ -166,18 +179,20 @@
       if (!hash && ~pathname.indexOf("#")) {
         [pathname,hash] = pathname.split("#");
       }
-      return function () {
+      return function (resolve, reject) {
         hash = hash || "#";
         if (!hash.indexOf("#") == 0) { hash = "#" + hash }
         if (pathname != window.location.pathname || hash != window.location.hash) {
+          // this needs to set some kind of "resume" mark first
           window.location = pathname + hash;
+        } else {
+          return true;
         }
-        return true;
       };
     }
 
     _ajax(ajax_options,callback) {
-      return function _ajax() {
+      return function _ajax(resolve, reject) {
         if (typeof ajax_options == "string") { ajax_options = { url: ajax_options } }
         var success = ajax_options.success || function() {};
         ajax_options.success = function(data,request) {
@@ -200,19 +215,17 @@
         return this._waitForFunction.apply(this,args);
       }
       if (typeof arg0 == "string") {
-        args[0] = function waitForElement() { return uC.find(arg0,'waiting') }
+        args[0] = function waitForElement(resolve,reject) { return uC.find(arg0,'waiting') }
         args[0]._name = args[0]._description = "waitForElement: "+arg0;
         return this._waitForFunction.apply(this,args);
       }
     }
 
     _waitForTime(ms,s) {
-      var self = this;
-      return function waitForTime() {
-        self.stop();
+      return function waitForTime(resolve,reject) {
         setTimeout(function () {
           if (s !== null) { konsole.log('waited',ms,s); }
-          self.start();
+          resolve();
         }, ms);
       }
     }
@@ -222,21 +235,20 @@
       var max_ms = (_c||{}).max_ms /* || this.get("max_ms") */ || uC.config.max_ms;
       var interval_ms = (_c||{}).interval_ms /* || this.get("interval_ms") */ || uC.config.interval_ms;
       var self = this;
-      function waitForFunction() {
-        self.stop();
+      function waitForFunction(resolve,reject) {
         var name = func._name || func.name;
         var start = new Date();
         var interval = setInterval(function () {
           var out = func();
           if (out) {
             konsole.log('waitForFunction',name);
-            self.start();
-            clearInterval(interval)
-            return out
+            clearInterval(interval);
+            resolve(out);
           }
           if (new Date() - start > max_ms) {
             self.mark('failed');
             konsole.error(name,new Date() - start);
+            reject();
             clearInterval(interval);
           }
         }, interval_ms);
@@ -246,16 +258,17 @@
     }
 
     _assert(f,name) {
-      return function() { //#! TODO How do I resolve/reject?
+      return function(resolve,reject) {
         if (typeof f  == "string") { var qs=f; f = function assertExists() { return uC.find(qs) } }
         var out = f();
         name = name || f.name;
         if (out) {
           konsole.log("ASSERT",name,out);
+          resolve(out);
         } else {
           konsole.error("ASSERT",name,out);
           console.error("Assertion failed at "+name);
-          this.stop();
+          reject();
         }
       }
     }
@@ -268,23 +281,26 @@
         name = name || f.name;
         if (!out) {
           konsole.log("!ASSERTNOT",name,out);
+          resolve()
         } else {
           konsole.error("ASSERTNOT",name,out);
           console.error("Assert not failed at "+name);
-          this.stop();
+          reject();
         }
       }
     }
 
     _assertEqual(f,value) {
-      function assertEqual() {
+      function assertEqual(resolve, reject) {
         var out = f();
         var name = f.name || f._name;
         if (out == value) {
           konsole.log("EQUALS",name,out);
+          resolve();
         } else {
           konsole.error("EQUALS",name,value+" != "+out);
           console.error("Equals failed at "+name);
+          reject();
         }
       }
       assertEqual._description = "assert: "+f.name+"() == "+value;
@@ -299,14 +315,15 @@
     }
 
     _click(element) {
-      function click() {
+      function click(resolve,reject) {
         element = uC.find(element,'clicked');
         try {
           element.click();
+          resolve();
         } catch(e) {
           (typeof reject === "function") && reject(e);
           konsole.error(uC._last_query_selector,"element not found");
-          throw e;
+          reject(e);
         }
         konsole.log("clicked",element._query_selector);
       }
@@ -345,13 +362,14 @@
 
         // in total this is down (1) + move (length) + up (1) + click (1) moves, or length+2
         konsole.log("triggered "+(xys.length+2)+" mouse moves",element)
+        return true;
       }
       mouseClick._name = "mouseClick "+ s;
       return mouseClick;
     }
 
     _changeValue(element,value) {
-      var changeValue = function changeValue() {
+      var changeValue = function changeValue(resolve,reject) {
         element = uC.find(element,'changed')
         if (element._query_selector) {
           value = value || this.get(element._query_selector);
@@ -360,18 +378,40 @@
           element.value = value;
           element.dispatchEvent(new Event("change"));
           element.dispatchEvent(new Event("blur"));
+          konsole.log("changed",element._query_selector);
+          resolve(element);
         } catch(e) {
           (typeof reject === "function") && reject(e);
           konsole.error("Cannot change value on",element)
-          throw e;
+          reject(e);
         }
-        konsole.log("changed",element._query_selector);
       }.bind(this);
       changeValue._description = "Change: " + element || "LAST";
       changeValue._name = "change";
       return changeValue;
     }
-
+    _changeForm(values) {
+      var changeForm = function changeForm(resolve,reject) {
+        values = values || this.context.form || this.context;
+        var changed = [];
+        for (var key in values) {
+          try {
+            var element = document.querySelector(key);
+            element.value = values[key];
+            element.dispatchEvent(new Event("change"));
+            element.dispatchEvent(new Event("blur"));
+            changed.push(element);
+          } catch (e) {
+            console.error("failed updating for "+key);
+            reject(e);
+            return;
+          }
+        }
+        return changed.length && changed;
+      }
+      changeForm._description = "Change Form";
+      return changeForm;
+    }
     _checkResults(key,value_func) {
       value_func = value_func || function() {
         var out = uC.find(key,"result");
@@ -393,7 +433,7 @@
             className: "diff",
             _name: "diff",
             title: "View diff in new window",
-            click: function() { uC.lib.showDiff(old,serialized); },
+            click: function() { console.log(old,serialized); uC.lib.showDiff(old,serialized); },
           }
           function replace(){
             uC.results.set(composit_key,serialized);
@@ -401,6 +441,7 @@
           }
           konsole.warn("Result changed",composit_key,old,serialized,diff,replace);
         }
+        resolve();
       }
     }
   }

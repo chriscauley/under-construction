@@ -88,7 +88,7 @@
 
   run(e) {
     uC.storage.set("__main__",e.item.command.name);
-    e.item.command.run();
+    e.item.command.start();
   }
 
   toggle(e) {
@@ -176,7 +176,7 @@
           konsole.commands.push(test);
           if (uC.storage.get("__main__") == command.name) {
             uC.__running__ = test;
-            uR.ready(test.run);
+            uR.ready(test.start);
           }
         });
       },
