@@ -34,9 +34,9 @@
   <button class="toggle" onclick={ toggle }></button>
   <ur-tabs>
     <ur-tab title="Logs">
-      <div each={ line,lineno in parent.parent.log } data-lineno={ lineno } data-ms="{ line.ts }" class={ line.className }>
+      <div each={ line,lineno in konsole._logs } data-lineno={ lineno } data-ms="{ line.ts }" class={ line.className }>
         <span each={ line }>
-          <span onclick={ click } class="{ className } { pointer: click }">{ _name }</span>
+          <span onclick={ click } class="{ className } { pointer: click }" title={ title }>{ _name }</span>
         </span>
       </div>
     </ur-tab>
@@ -50,9 +50,13 @@
     </ur-tab>
   </ur-tabs>
   <div class="commands">
-    <div if={ _running }>
-      <button class={ uR.config.btn_success } onclick={ konsole.stop }>
+    <div>
+      <button class={ uR.config.btn_success } onclick={ konsole.stop } if={ _running }>
         Auto-Running: { _running } <i class="fa fa-close"></i></button>
+      <button class={ uR.config.btn_success } onclick={ konsole.start } if={ !_running }>
+        Auto-Run</button>
+      <button class={uR.config.btn_error } onclick={ uC.tests.clear() } style="float: right">
+        Clear Tests</button>
     </div>
     <div class="collection">
       <input class="collection-toggle" type="radio" name="command_toggle" id="command_toggle_null" />
@@ -75,7 +79,6 @@
 
   var watch_keys = [];
   var watch_ings = {};
-  this.log = [];
   var self = this;
 
   this.on('update',function() {
@@ -101,89 +104,25 @@
     this._running = uC.storage.get("__main__");
   });
   this.on("mount",function() {
-    window.konsole = {
-      schema: [ 'wait_ms' ],
-      toggle: self.toggle,
-      stop: function() { uC.storage.set("__main__",null); },
-      log: function() {
-        // arguments can be strings or functions
-        var a = [].slice.call(arguments);
-        var ts = (new Date() - konsole.log._last);
-        if (!ts && ts !== 0) { ts = 'START' }
-        else if (ts > 1000) { ts = "+"+(ts/1000).toFixed(1)+"s" }
-        else { ts = "+"+ts+"ms" }
-        var out = a.map(function(word) {
-          if (typeof word == "function") {
-            return {
-              className: "function",
-              func: word,
-              _name: word._name || word.name,
-              click: function (e) {
-                e.item.click = undefined;
-                e.item._name = e.item.func() || e.item._name;
-                konsole.update();
-              },
-            }
-          } else if (typeof word == "string") {
-            var new_word = {
-              content: word,
-              _name: (word.length < 30)?word:word.slice(0,15)+"...",
-            }
-            if (word.startsWith("data:image")) {
-              new_word.className = "dataURL";
-              new_word._name = "dataURL";
-              new_word.click = function() { window.open(word); }
-            }
-            return new_word;
-          } else if (word === undefined) {
-            return { className: "undefined", _name: "undefined" }
-          }
-          return word; // it was something else, hopefully pre-formatted
-        });
-        if (a[0] == "WARN") { out.className = "kwarning" }
-        if (a[0] == "ERROR") { out.className = "kerror" }
-        out.ts = ts;
-        self.log.push(out);
-        self.update();
-        konsole.log._last = new Date();
-        var container = self.root.querySelector("ur-tab[title='Logs']");
-        container.scrollTop = container.scrollHeight;
-      },
-      error: function() {
-        var args = [].slice.call(arguments);
-        args.unshift("ERROR");
-        konsole.log.apply(konsole,args);
-        console.error.apply(window,args); // to get chrome's interactive stack trace
-      },
-      warn: function() {
-        var args = [].slice.call(arguments);
-        args.unshift("WARN");
-        konsole.log.apply(konsole,args);
-      },
-      clear: function() { konsole.log._last = undefined },
-      update: self.update,
-      watch: function(k,v) {
-        if (watch_keys.indexOf(k) == -1) { watch_keys.push(k); }
-        watch_ings[k] = v;
-        self.update();
-      },
-      commands: [],
-      _ready: konsole._ready,
-      addCommands: function() {
-        uR.forEach(arguments,function(command) {
-          var test = new uC.Test(command);
-          test.id = konsole.commands.length;
-          konsole.commands.push(test);
-          if (uC.storage.get("__main__") == command.name) {
-            uC.__running__ = test;
-            uR.ready(test.start);
-          }
-        });
-      },
+    this.stop = function() { uC.storage.set("__main__",null); },
+    this.commands = [];
+    this._ready = window.konsole._ready;
+    new uR.Log({ parent: this });
+    window.konsole = this;
+    this.addCommands = function() {
+      uR.forEach(arguments,function(command) {
+        var test = new uC.Test(command);
+        test.id = konsole.commands.length;
+        konsole.commands.push(test);
+        if (uC.storage.get("__main__") == command.name) {
+          uC.__running__ = test;
+          uR.ready(test.start);
+        }
+      });
     };
-    uR.forEach(konsole._ready,function(tup) {
+    uR.forEach(window.konsole._ready,function(tup) {
       var key = tup[0], args = tup[1];
-      konsole[key].apply(this,[].slice.apply(args));
+      konsole[key].apply(self,[].slice.apply(args));
     });
     setTimeout(konsole.update,500);
     if (!document.querySelector(uR.config.mount_alerts_to)) {

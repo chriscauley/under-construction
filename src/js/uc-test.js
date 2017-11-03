@@ -101,7 +101,8 @@
           self.next_move = self.delay && new Date().valueOf() + self.delay;
           self.run();
         }
-        function reject() {
+        function reject(e) {
+          console.error(e);
         }
         var next = this.queue[this.step];
         this.status = next.status = 'running';
@@ -433,13 +434,13 @@
             className: "diff",
             _name: "diff",
             title: "View diff in new window",
-            click: function() { console.log(old,serialized); uC.lib.showDiff(old,serialized); },
+            click: function() { uC.lib.showDiff(old,serialized); },
           }
           function replace(){
             uC.results.set(composit_key,serialized);
             return "updated!"
           }
-          konsole.warn("Result changed",composit_key,old,serialized,diff,replace);
+          konsole.warn("Result changed",key,diff,replace);
         }
         resolve();
       }
