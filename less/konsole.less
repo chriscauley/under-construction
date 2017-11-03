@@ -69,8 +69,14 @@ body.konsole-open {
 }
 
 konsole {
-  .kwarning { background: #fcf8e3; }
-  .kerror { background: #e88; }
+  .kwarning {
+    background: #fcf8e3;
+    .fa { color: #8a6d3b; }
+  }
+  .kerror {
+    background: #e88;
+    .fa { color: #a94442; }
+  }
   .u { text-decoration: underline; }
   .pointer {
     border-bottom: 2px solid;
@@ -78,7 +84,12 @@ konsole {
     display: inline-block;
   }
   .function { color: blue; }
-  .dataURL { color: green; }
+  .dataURL { color: green; background: rgba(0,255,0,0.05); }
+  .element {
+    color: green;
+    &:before { content: "<"; }
+    &:after { content: ">"; }
+  }
   .undefined {
     font-style: italic;
     font-weight: bold;
