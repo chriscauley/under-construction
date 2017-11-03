@@ -19,28 +19,18 @@ var JS_FILES = [
   "src/js/diff.js",
   "src/js/utils.js",
   "src/js/record.js",
-  ".dist/_tags.js",
+  "src/tags/konsole.tag",
 ];
 
-gulp.task('build-js', ['build-tag'], function () {
+gulp.task('build-js', function () {
   return gulp.src(JS_FILES)
+    .pipe(riot())
     .pipe(babel({ presets: ['es2015'] }))
     .pipe(sourcemaps.init())
     .pipe(concat(PROJECT_NAME + '-built.js'))
     //.pipe(uglify({mangle: false, compress: false}))
     .pipe(sourcemaps.write("."))
     .pipe(gulp.dest(".dist/"));
-});
-
-var TAG_FILES = [
-  "src/tags/konsole.tag",
-]
-
-gulp.task('build-tag', function() {
-  return gulp.src(TAG_FILES)
-    .pipe(riot())
-    .pipe(concat("_tags.js"))
-    .pipe(gulp.dest(".dist"));
 });
 
 LESS_FILES = ["less/base.less"];
@@ -56,7 +46,6 @@ gulp.task('build-css', function () {
 var build_tasks = ['build-js', 'build-css'];
 gulp.task('watch', build_tasks, function () {
   gulp.watch(JS_FILES, ['build-js']);
-  gulp.watch(TAG_FILES, ['build-js']);
   gulp.watch("less/**/*.less", ['build-css']); // have to watch directory because of relative imports
 
 });
