@@ -5,7 +5,7 @@ Sadly, under-construction is currently under construction. The goal of this proj
 
 ![Under Construction](/under-construction.gif?raw=true "Under Construction")
 
-### In `&lt;head&gt;` tag
+### In `head` tag
 
 ```html
 <link href="https://static.unrest.io/.dist/unrest-built.css" type="text/css" rel="stylesheet" />
