@@ -433,7 +433,7 @@
           var diff = {
             className: "diff",
             _name: "diff",
-            title: "View diff in new window",
+            title: "View diff",
             click: function() { uC.lib.showDiff(old,serialized); },
           }
           function replace(){

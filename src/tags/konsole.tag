@@ -33,8 +33,8 @@
 <konsole>
   <button class="toggle" onclick={ toggle }></button>
   <ur-tabs>
-    <ur-tab title="Logs">
-      <div each={ line,lineno in konsole._logs } data-lineno={ lineno } data-ms="{ line.ts }" class={ line.className }>
+    <ur-tab title={ name } each={ uR.__logs }>
+      <div each={ line,lineno in _logs } data-lineno={ lineno } data-ms="{ line.ts }" class={ line.className }>
         <span each={ line }>
           <span onclick={ click } class="{ className } { pointer: click }" title={ title }>{ _name }</span>
         </span>
@@ -52,8 +52,9 @@
   <div class="commands">
     <div>
       <button class={ uR.config.btn_success } onclick={ konsole.stop } if={ _running }>
-        Auto-Running: { _running } <i class="fa fa-close"></i></button>
-      <button class={ uR.config.btn_success } onclick={ konsole.start } if={ !_running }>
+        Running: { _running } <i class="fa fa-close"></i></button>
+      <button class={ uR.config.btn_success } onclick={ konsole.start } if={ !_running } style="opacity:0;cursor: inherit">
+        <!-- #! TODO -->
         Auto-Run</button>
       <button class={uR.config.btn_error } onclick={ uC.tests.clear() } style="float: right">
         Clear Tests</button>
@@ -107,7 +108,7 @@
     this.stop = function() { uC.storage.set("__main__",null); },
     this.commands = [];
     this._ready = window.konsole._ready;
-    new uR.Log({ parent: this });
+    new uR.Log({ parent: this, name: "Konsole" });
     window.konsole = this;
     this.addCommands = function() {
       uR.forEach(arguments,function(command) {
