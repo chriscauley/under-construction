@@ -98,13 +98,13 @@
           self.completed.push(next._name || next.name);
           uC.tests.set(self.getStateHash(),next.status);
           self.step++;
-          self.next_move = self.delay && new Date().valueOf() + self.delay;
+          self.next_move = self.delay && (new Date().valueOf() + self.delay);
           self.run();
         }
         function reject(e) {
           console.error(e);
+          self.stop();
         }
-        var next = this.queue[this.step];
         this.status = next.status = 'running';
 
         var result;
@@ -116,17 +116,21 @@
         result && resolve(result); // test functions that return truthy objects move to next test
         konsole.update();
       }
-      if (this.step == this.queue.length && this.queue.length) {
-        this.queue[this.queue.length-1].status = "passed";
-        this.mark('passed');
-        this.parent_resolve && parent_resolve;
+      var counts = {};
+      uR.forEach(this.queue,function(q) {
+        counts[q.status] = (counts[q.status] || 0) +1;
+      });
+      if (counts.complete == this.queue.length) {
+        this.mark("passed");
+        this.parent_resolve && this.parent_resolve()
       }
+      else if (counts.error) { this.mark("error"); }
+      else if (counts.warning) { this.mark("warning"); }
     }
     mark(status) {
       this.status = status;
       uC.tests.set(this.name,status);
       (uC.storage.get("__main__") == this.name) && uC.storage.set("__main__",null)
-      this.is_ready = false;
       konsole.update();
     }
     test() {
@@ -429,6 +433,7 @@
         match = old && (old.hash == serialized.hash);
         if (match) {
           konsole.log("Result: ",composit_key," is unchanged");
+          resolve();
         } else {
           var diff = {
             className: "diff",
@@ -441,9 +446,9 @@
             return "updated!"
           }
           konsole.warn("Result changed",key,diff,replace);
+          resolve({ status: 'warning' });
         }
-        resolve();
-      }
+     }
     }
   }
 })();

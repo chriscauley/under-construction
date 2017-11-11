@@ -7,8 +7,10 @@ var through = require('through2');
 var uglify = require('gulp-uglify');
 var util = require('gulp-util');
 var babel = require('gulp-babel');
+var argv = require('yargs').argv;
 
 var PROJECT_NAME = "uc";
+var DEST = (argv._[0] == 'deploy')?"/var/www/uc.unrest.io/stable/":".dist/";
 
 var JS_FILES = [
   "lib/diff.js",
@@ -30,7 +32,7 @@ gulp.task('build-js', function () {
     .pipe(concat(PROJECT_NAME + '-built.js'))
     //.pipe(uglify({mangle: false, compress: false}))
     .pipe(sourcemaps.write("."))
-    .pipe(gulp.dest(".dist/"));
+    .pipe(gulp.dest(DEST));
 });
 
 LESS_FILES = ["less/base.less"];
@@ -39,7 +41,7 @@ gulp.task('build-css', function () {
   return gulp.src(LESS_FILES)
     .pipe(less({}))
     .pipe(concat(PROJECT_NAME+'-built.css'))
-    .pipe(gulp.dest(".dist/"));
+    .pipe(gulp.dest(DEST));
 });
 
 
@@ -47,7 +49,8 @@ var build_tasks = ['build-js', 'build-css'];
 gulp.task('watch', build_tasks, function () {
   gulp.watch(JS_FILES, ['build-js']);
   gulp.watch("less/**/*.less", ['build-css']); // have to watch directory because of relative imports
-
 });
+
+gulp.task('deploy', build_tasks);
 
 gulp.task('default', build_tasks);
