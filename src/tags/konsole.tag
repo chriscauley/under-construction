@@ -33,50 +33,34 @@
 <konsole>
   <button class="toggle" onclick={ toggle }></button>
   <ur-tabs>
-    <ur-tab title={ name } each={ uR.__logs }>
-      <div each={ line,lineno in _logs } data-lineno={ lineno } data-ms="{ line.ts }" class={ line.className }>
-        <span each={ line }>
-          <span onclick={ click } class="{ className } { pointer: click }" title={ title }>{ _name }</span>
-        </span>
+    <ur-tab class="commands" title="Commands">
+      <div>
+        <button class={ uR.config.btn_success } onclick={ konsole.stop } if={ _running }>
+          Running: { _running } <i class="fa fa-close"></i></button>
+        <button class={ uR.config.btn_success } onclick={ konsole.start } if={ !_running } style="opacity:0;cursor: inherit">
+          <!-- #! TODO -->
+          Auto-Run</button>
+        <button class={uR.config.btn_error } onclick={ uC.tests.clear() } style="float: right">
+          Clear Tests</button>
       </div>
-    </ur-tab>
-    <ur-tab title="Watches">
-      <div each={ parent.parent.watch }>
-        <b>{ key }:</b> { value }
+      <div class="collection">
+        <input class="collection-toggle" type="radio" name="command_toggle" id="command_toggle_null" />
+        <li class="collection-item" each={ command in uC.commands }>
+          <input class="collection-toggle" type="radio" name="command_toggle" id="command_toggle_{ command.id }" />
+          <div class="collection-header { command.status }">
+            <i class="fa fa-play-circle" onclick={ parent.run }></i>
+            { command.name }
+            <label class="fa fa-plus-circle right command-toggle" for="command_toggle_{ command.id }"></label>
+            <label class="fa fa-minus-circle right" for="command_toggle_null"></label>
+          </div>
+          <div class="collection-content" id="command_log_{ command.id }"></div>
+       </li>
       </div>
     </ur-tab>
     <ur-tab title="Settings">
       <!--<ur-form schema={ konsole.schema }></ur-form>-->
     </ur-tab>
   </ur-tabs>
-  <div class="commands">
-    <div>
-      <button class={ uR.config.btn_success } onclick={ konsole.stop } if={ _running }>
-        Running: { _running } <i class="fa fa-close"></i></button>
-      <button class={ uR.config.btn_success } onclick={ konsole.start } if={ !_running } style="opacity:0;cursor: inherit">
-        <!-- #! TODO -->
-        Auto-Run</button>
-      <button class={uR.config.btn_error } onclick={ uC.tests.clear() } style="float: right">
-        Clear Tests</button>
-    </div>
-    <div class="collection">
-      <input class="collection-toggle" type="radio" name="command_toggle" id="command_toggle_null" />
-      <li class="collection-item" each={ command in konsole.commands }>
-        <input class="collection-toggle" type="radio" name="command_toggle" id="command_toggle_{ command.id }" />
-        <div class="collection-header { command.status }">
-          <i class="fa fa-play-circle" onclick={ parent.run }></i>
-          { command.name }
-          <label class="fa fa-plus-circle right command-toggle" for="command_toggle_{ command.id }"></label>
-          <label class="fa fa-minus-circle right" for="command_toggle_null"></label>
-        </div>
-        <div class="collection-content">
-          <div each={ f in command.queue } class={ f.status }>
-            { f._description || f._name || f.name }
-          </div>
-        </div>
-      </li>
-    </div>
-  </div>
 
   var watch_keys = [];
   var watch_ings = {};
@@ -84,7 +68,7 @@
 
   this.on('update',function() {
     this.watch = [];
-    for (var i=0;i<watch_keys.length;i++) {
+    for (var i=0; i < watch_keys.length; i++) {
       var k = watch_keys[i];
       this.watch.push({key: k, value: watch_ings[k]});
     }
@@ -103,6 +87,7 @@
   }
   this.on("update",function() {
     this._running = uC.storage.get("__main__");
+    uR.forEach(uR.__logs,function(l) { l.update_tag() })
   });
   this.on("mount",function() {
     this.stop = function() { uC.storage.set("__main__",null); },
@@ -113,11 +98,9 @@
     this.addCommands = function() {
       uR.forEach(arguments,function(command) {
         var test = new uC.Test(command);
-        test.id = konsole.commands.length;
-        konsole.commands.push(test);
         if (uC.storage.get("__main__") == command.name) {
           uC.__running__ = test;
-          uR.ready(test.start);
+          uR.ready(function() { test.start() });
         }
       });
     };

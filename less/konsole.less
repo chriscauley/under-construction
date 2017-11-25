@@ -9,8 +9,7 @@ konsole {
   right: 0;
   width: 500px;
   z-index: 99999; // 100,000 is the ur-modal z-index
-  ur-tabs, .commands { flex-basis: 50%; height: 50%; }
-  ur-tab,.commands { background: rgba(200,200,200,0.8); }
+  ur-tabs { background: rgba(200,200,200,0.8); flex-basis: 100%; height: 100%; }
   ur-tabs.default {
     padding-top: 32px;
     .tab-anchors {
@@ -69,7 +68,11 @@ body.konsole-open {
 }
 
 konsole {
-  .kwarning {
+  .ksuccess {
+    background: #AAFFAA;
+    .fa { color: #44a942; }
+  }
+  .kwarn {
     background: #fcf8e3;
     .fa { color: #8a6d3b; }
   }
