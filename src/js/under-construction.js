@@ -19,7 +19,8 @@
       return {
         user_id: uR.auth && uR.auth.user && uR.auth.user.id
       }
-    }
+    },
+    commands: [],
   };
   window.u$ = {};
 
