@@ -48,7 +48,7 @@
         <li class="collection-item" each={ command in uC.commands }>
           <input class="collection-toggle" type="radio" name="command_toggle" id="command_toggle_{ command.id }" />
           <div class="collection-header { command.status }">
-            <i class="fa fa-play-circle" onclick={ parent.run }></i>
+            <i class="fa fa-play-circle" onclick={ parent.parent.parent.run }></i>
             { command.name }
             <label class="fa fa-plus-circle right command-toggle" for="command_toggle_{ command.id }"></label>
             <label class="fa fa-minus-circle right" for="command_toggle_null"></label>

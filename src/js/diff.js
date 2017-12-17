@@ -69,32 +69,50 @@ window.uC.lib.serialize = function serialize(obj) {
       __str__: uC.lib.truncate(obj),
     }
   }
+  try {
+    return {
+      type: "json",
+      display: JSON.stringify(obj,null,2),
+      hash: objectHash(obj),
+      __str__: "JSON",
+    }
+  } catch (e) { }
   return {
     type: "unknown",
     hash: objectHash((obj === undefined)?"undefined":obj),
   }
 }
 
+function _compareString(a,b,func) {
+  func = func || function(s) { return s.display || s; }
+  var comparison = "";
+  var diff = JsDiff.diffLines(func(a) || "<i>[EMPTY STRING]</i>",func(b) || "<i>[EMPTY STRING]</i>");
+  uR.forEach(diff, function(d) {
+    comparison += "<div class='"+(d.added && "added" || d.removed && "removed")+"'>"+d.value+"</div>";
+  });
+  return "<div class='flexy'><pre>"+comparison+"</pre></div>";
+}
 uC.lib.diff_show = {
-  "HTMLElment": function(old,serialized) {
-    var diff = JsDiff.diffLines(old.display||"",serialized.display);
-    var comparison = "";
-    function compare(a,b,func) {
-      var comparison = "";
-      var diff = JsDiff.diffLines(func(a) || "<i>[EMPTY STRING]</i>",func(b) || "<i>[EMPTY STRING]</i>");
-      uR.forEach(diff, function(d) {
-        comparison += "<div class='"+(d.added && "added" || d.removed && "removed")+"'>"+d.value+"</div>";
-      });
-      return "<div class='flexy'><pre>"+comparison+"</pre></div>";
-    }
+  string: function(old,serialized) {
+    uR.alertElement("ur-tabs",{
+      className: "uc default",
+      tabs: [
+        { title: "diff", innerHTML: _compareString(old,serialized.display) }
+      ]
+    });
+  },
+  json: function(old,serialized) {
+    return uC.lib.diff_show.string(old,serialized);
+  },
+  HTMLElment: function(old,serialized) {
     uR.alertElement("ur-tabs", {
       className: 'uc default',
       tabs: [
         // #! TODO: column/row classes should be configurable... maybe?
-        { title: "html", innerHTML: compare(old,serialized,function(s) {
+        { title: "html", innerHTML: _compareString(old,serialized,function(s) {
           return uR.escapeHTML(html_beautify(s.outerHTML,{indent_size: 2}))
         }) },
-        { title: "text", innerHTML: compare(old,serialized,function(s) { return s.display }) },
+        { title: "text", innerHTML: _compareString(old,serialized) },
       ]
     });
   },
@@ -139,6 +157,7 @@ uC.lib.diff_show = {
     uC.utils.urlToCanvas(serialized.dataURL,function(canvas) { new_canvas = canvas; next(); });
   }
 };
+
 window.uC.lib.showDiff = function(old,serialized) {
   old = old || "";
   uC.lib.diff_show[serialized.type](old,serialized);

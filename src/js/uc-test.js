@@ -19,7 +19,8 @@
       });
       this.queue = [];  // functions/test to execute
       this.completed = []; // strings of completed queue objects
-      this.name = this.name || (functions.length?functions[0].name:(options.name || "UNNAMED"));
+      var f0 = functions[0];
+      this.name = this.name || (functions.length?(f0._name || f0.name):(options.name || "UNNAMED"));
       this.log = new uR.Log({name: this.name, mount_to: "#command_log_"+this.id});
       this.parent = options.parent;
       this.depth = this.parent?(this.parent.depth+1):0;
@@ -112,6 +113,11 @@
           self.run();
         }
         function fail(e) {
+          var args = [].slice.call(arguments);
+          if (args.length == 0) { args = self.log._logs[self.step]; }
+          args.unshift("ERROR")
+          args.unshift(self.step);
+          self.log.apply(self,args);
           clearInterval(self.active_interval)
           self.stop();
           self.mark("error");
@@ -209,15 +215,47 @@
     }
 
     _ajax(ajax_options,callback) {
-      return function _ajax(pass, fail) {
+      var self = this;
+      var name = ajax_options.url;
+      var full_url = ajax_options.url;
+      function lastSplitPart(string,splitter) {
+        var parts = string.split(splitter);
+        return parts.pop() || parts.pop() || "";
+      }
+      if (name.length > 20) {
+        var [url,query_string] = full_url.split("?");
+        name = ".../" + lastSplitPart(url,"/");
+        if (query_string) {
+          if (~query_string.indexOf("&")) { name += "?...&" + lastSplitPart(query_string,"&"); }
+          else { name += "?" + query_string }
+        }
+      }
+      function ajax(pass, fail) {
         if (typeof ajax_options == "string") { ajax_options = { url: ajax_options } }
         var success = ajax_options.success || function() {};
         ajax_options.success = function(data,request) {
           success(data,request);
-          (callback(data,request)?pass:fail)();
+          callback && callback(data,request);
+          self._compareResults(full_url,data,pass,fail);
+        }
+        ajax_options.error = function(data,request) {
+          var result = {
+            _name: request.status+"'d! "+ name,
+            title: ajax.description.title,
+          };
+          if (ajax_options.allow && ~ajax_options.allow.indexOf(request.status)) {
+            self._compareResults(full_url,data,pass,fail);
+          } else {
+            fail(result);
+          }
         }
         uR.ajax(ajax_options);
       }
+      ajax.description = {
+        _name: "Ajax " + name,
+        title: (full_url != name && full_url),
+      }
+      return ajax
     }
 
     _wait() {
@@ -396,26 +434,34 @@
       return function checkResults(pass,fail) {
         key = key || uC._last_query_selector;
         var value = value_func();
-        var composit_key = this.getStateHash(key);
-        var old = uC.results.get(composit_key);
-        if (old && old.dataURL) { old.click = function() { window.open(old.dataURL) } }
-        var serialized, match;
-        serialized = uC.lib.serialize(value); // convert it to a serialized object
-        match = old && (old.hash == serialized.hash);
-        if (match) {
-          pass("Result: ",composit_key," is unchanged");
+        this._compareResults(key,value,pass,fail);
+      }
+    }
+    _compareResults(key,value,pass,fail,name) {
+      name = name || key
+      var composit_key = this.getStateHash(key);
+      var old = uC.results.get(composit_key);
+      if (old && old.dataURL) { old.click = function() { window.open(old.dataURL) } }
+      var serialized, match;
+      serialized = uC.lib.serialize(value); // convert it to a serialized object
+      match = old && (old.hash == serialized.hash);
+      if (match) {
+        pass("Result: ",name," is unchanged");
+      } else {
+        var diff = {
+          className: "diff",
+          _name: "diff",
+          title: "View diff",
+          click: function() { uC.lib.showDiff(old,serialized); },
+        }
+        function replace(){
+          uC.results.set(composit_key,serialized);
+          return "updated!"
+        }
+        if (uC.CANNONICAL) {
+          pass("Result set",name,diff,replace());
         } else {
-          var diff = {
-            className: "diff",
-            _name: "diff",
-            title: "View diff",
-            click: function() { uC.lib.showDiff(old,serialized); },
-          }
-          function replace(){
-            uC.results.set(composit_key,serialized);
-            return "updated!"
-          }
-          pass("WARN","Result changed",key,diff,replace);
+          pass("WARN","Result changed",name,diff,replace);
         }
       }
     }
