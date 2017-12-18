@@ -92,32 +92,32 @@ function _compareString(a,b,func) {
   });
   return "<div class='flexy'><pre>"+comparison+"</pre></div>";
 }
-uC.lib.diff_show = {
-  string: function(old,serialized) {
-    uR.alertElement("ur-tabs",{
-      className: "uc default",
-      tabs: [
-        { title: "diff", innerHTML: _compareString(old,serialized.display) }
-      ]
-    });
-  },
-  json: function(old,serialized) {
-    return uC.lib.diff_show.string(old,serialized);
-  },
-  HTMLElment: function(old,serialized) {
-    uR.alertElement("ur-tabs", {
-      className: 'uc default',
-      tabs: [
-        // #! TODO: column/row classes should be configurable... maybe?
-        { title: "html", innerHTML: _compareString(old,serialized,function(s) {
-          return uR.escapeHTML(html_beautify(s.outerHTML,{indent_size: 2}))
-        }) },
-        { title: "text", innerHTML: _compareString(old,serialized) },
-      ]
-    });
-  },
-  image: function(old,serialized) {
-    if (!old || !old.dataURL) {
+
+uC.lib.alertObject = function alertObject(obj) {
+  if (obj.type == "json") {
+    var tabs = [{ title: "json", innerHTML: "<pre>" + obj.display + "</pre>" }]
+  }
+  if (obj.type == "string") { throw("Not Implemented #! TODO"); }
+  if (obj.type == "HTMLElement") { throw("Not Implemented #! TODO"); }
+  if (obj.type == "image") { throw("Not Implemented #! TODO"); }
+  uR.alertElement("ur-tabs", { className: "uc default", tabs: tabs });
+}
+
+
+uC.lib.alertDiff = function(old,serialized) {
+  old = old || "";
+  if (serilized.type == 'string' || serialized.type == 'json') {
+    var tabs = [ { title: "diff", innerHTML: _compareString(old,serialized.display) } ];
+  } else if (serialized.type == "HTMLElement") {
+    // #! TODO: column/row classes should be configurable... maybe?
+    var tabs = [
+      { title: "html", innerHTML: _compareString(old,serialized,function(s) {
+        return uR.escapeHTML(html_beautify(s.outerHTML,{indent_size: 2}))
+      }) },
+      { title: "text", innerHTML: _compareString(old,serialized) },
+    ]
+  } else if (serialized.type == 'image') {
+    if (!old || !old.dataURL) { // empty image
       old = { dataURL: "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" };
     }
     if (!window.pixelmatch) {
@@ -155,13 +155,10 @@ uC.lib.diff_show = {
     }
     uC.utils.urlToCanvas(old.dataURL,function(canvas) { old_canvas = canvas; next(); });
     uC.utils.urlToCanvas(serialized.dataURL,function(canvas) { new_canvas = canvas; next(); });
+    return; // alert tabs happens after both images load, so exit
   }
+  uR.alertElement("ur-tabs",{ className: "uc default", tabs: tabs });
 };
-
-window.uC.lib.showDiff = function(old,serialized) {
-  old = old || "";
-  uC.lib.diff_show[serialized.type](old,serialized);
-}
 
 window.uC.lib.diff = (function() {
   class Diff {

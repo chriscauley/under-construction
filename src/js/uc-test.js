@@ -446,13 +446,18 @@
       serialized = uC.lib.serialize(value); // convert it to a serialized object
       match = old && (old.hash == serialized.hash);
       if (match) {
-        pass("Result: ",name," is unchanged");
+        var view = {
+          click: function() { uC.lib.alertObject(serialized); },
+          className: 'fa fa-search-plus',
+          title: "View Details",
+        };
+        pass("Result: ",name,"is unchanged", view);
       } else {
         var diff = {
           className: "diff",
           _name: "diff",
           title: "View diff",
-          click: function() { uC.lib.showDiff(old,serialized); },
+          click: function() { uC.lib.alertDiff(old,serialized); },
         }
         function replace(){
           uC.results.set(composit_key,serialized);

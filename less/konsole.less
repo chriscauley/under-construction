@@ -68,6 +68,12 @@ body.konsole-open {
 }
 
 konsole {
+  .pointer {
+    border-bottom: 2px solid;
+    cursor: pointer;
+    display: inline-block;
+    &.fa { border-bottom: none; }
+  }
   .ksuccess {
     background: #AAFFAA;
     .fa { color: #44a942; }
@@ -81,11 +87,6 @@ konsole {
     .fa { color: #a94442; }
   }
   .u { text-decoration: underline; }
-  .pointer {
-    border-bottom: 2px solid;
-    cursor: pointer;
-    display: inline-block;
-  }
   .function { color: blue; }
   .dataURL { color: green; background: rgba(0,255,0,0.05); }
   .element {
