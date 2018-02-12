@@ -20,7 +20,7 @@
       this.queue = [];  // functions/test to execute
       this.completed = []; // strings of completed queue objects
       var f0 = functions[0];
-      this.name = this.name || (functions.length?(f0._name || f0.name):(options.name || "UNNAMED"));
+      this.name = this._name || this.name || (functions.length?(f0._name || f0.name):(options.name || "UNNAMED"));
       this.log = new uR.Log({name: this.name, mount_to: "#command_log_"+this.id});
       this.parent = options.parent;
       this.depth = this.parent?(this.parent.depth+1):0;
@@ -31,7 +31,7 @@
 
       var fnames = [
         'click', 'changeValue', 'changeForm', 'wait','mouseClick', 'assert', 'assertNot', 'assertEqual', 'setPath',
-        'checkResults', 'debugger', 'ajax'
+        'reloadWindow','checkResults', 'debugger', 'ajax'
       ];
       uR.forEach(fnames,function(fname) {
         this[fname] = function() {
@@ -92,6 +92,7 @@
         var next = this.queue[this.step]; // this is either a test or a function passed in via then
         function pass() {
           var args = [].slice.call(arguments);
+          while (args[0] === true) { args.shift() }
 
           // use current log if no arguments applied
           if (args.length == 0) { args = self.log._logs[self.step]; }
@@ -111,6 +112,9 @@
           self.step++;
           self.next_move = self.delay && (new Date().valueOf() + self.delay);
           self.run();
+        }
+        if (this.__completed && this.__completed.length) {
+          return pass(this.__completed.shift()+" (skipped after reload)")
         }
         function fail(e) {
           var args = [].slice.call(arguments);
@@ -152,6 +156,10 @@
     mark(status) {
       this.status = status;
       uC.tests.set(this.name,status);
+      if (this.status == "passed" && this.pass) {
+        this.stop();
+        this.pass();
+      }
       konsole.update();
     }
     test() {
@@ -161,12 +169,20 @@
       return this
     }
     start(pass,fail) {
+      uC.__running__ = this;
+      this.__completed = uC.storage.get("__completed");
+      uC.storage.remove("__completed");
+      var toggler = document.querySelector("[for=command_toggle_"+this.id+"]");
+      toggler && toggler.click();
       this.pass = pass || this.pass;
       this.fail = fail || this.fail;
       this.is_ready = true;
       this.run.bind(this)()
     }
-    stop() { this.is_ready = false; }
+    stop() {
+      this.is_ready = false;
+      uC.__running__ = undefined;
+    }
   }
 
   uC.Test = class Test extends uC.BaseTest {
@@ -212,6 +228,14 @@
           return true;
         }
       };
+    }
+
+    _reloadWindow() {
+      return function(pass,fail) {
+        this.completed.push("window reloaded");
+        this._progress = uC.storage.set("__completed",this.completed);
+        window.location.reload();
+      }
     }
 
     _ajax(ajax_options,callback) {
@@ -427,6 +451,10 @@
       return changeForm;
     }
     _checkResults(key,value_func) {
+      if (typeof key == "function") {
+        value_func = key;
+        key = value_func.name;
+      }
       value_func = value_func || function() {
         var out = uC.find(key,"result");
         return out;

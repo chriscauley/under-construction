@@ -106,7 +106,7 @@ uC.lib.alertObject = function alertObject(obj) {
 
 uC.lib.alertDiff = function(old,serialized) {
   old = old || "";
-  if (serilized.type == 'string' || serialized.type == 'json') {
+  if (serialized.type == 'string' || serialized.type == 'json') {
     var tabs = [ { title: "diff", innerHTML: _compareString(old,serialized.display) } ];
   } else if (serialized.type == "HTMLElement") {
     // #! TODO: column/row classes should be configurable... maybe?
