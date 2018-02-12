@@ -37,23 +37,24 @@
       <div>
         <button class={ uR.config.btn_success } onclick={ konsole.stop } if={ _running }>
           Running: { _running } <i class="fa fa-close"></i></button>
-        <button class={ uR.config.btn_success } onclick={ konsole.start } if={ !_running } style="opacity:0;cursor: inherit">
+        <button class={ uR.config.btn_success } onclick={ konsole.autorun } if={ !_running }>
           <!-- #! TODO -->
           Auto-Run</button>
-        <button class={uR.config.btn_error } onclick={ uC.tests.clear() } style="float: right">
-          Clear Tests</button>
+        <button class={uR.config.btn_error } onclick={ uC.tests.clear() }
+                style="float: right">Clear Tests</button>
       </div>
       <div class="collection">
         <input class="collection-toggle" type="radio" name="command_toggle" id="command_toggle_null" />
-        <li class="collection-item" each={ command in uC.commands }>
+        <li class="collection-item" each={ command in uC.commands } id="command_log_{ command.id }">
           <input class="collection-toggle" type="radio" name="command_toggle" id="command_toggle_{ command.id }" />
           <div class="collection-header { command.status }">
             <i class="fa fa-play-circle" onclick={ parent.parent.parent.run }></i>
             { command.name }
             <label class="fa fa-plus-circle right command-toggle" for="command_toggle_{ command.id }"></label>
             <label class="fa fa-minus-circle right" for="command_toggle_null"></label>
+            <i class="fa fa-trash right" onclick={ parent.parent.parent.clear }></i>
           </div>
-          <div class="collection-content" id="command_log_{ command.id }"></div>
+          <ur-logger command={ command }></ur-logger>
        </li>
       </div>
     </ur-tab>
@@ -79,11 +80,26 @@
     e.item.command.start();
   }
 
+  clear(e) {
+    e.item.command.mark("")
+  }
+
   toggle(e) {
     var c = "konsole-open";
     var cL = document.body.classList;
     cL[cL.contains(c)?"remove":"add"](c);
     uR.storage.set("KONSOLE_UP",cL.contains(c) || "");
+  }
+  autorun(e) {
+    uC.commands.forEach(function(command) {
+      if (uC.__running__) { return }
+      if (command.status =="passed") { return }
+      command.start(function() { self.autorun() });
+    });
+    if (e && !uC.__running__) { //human click and all tests are passed... reset them!
+      uC.commands.forEach(function(command) { command.status = ""; });
+      self.autorun()
+    }
   }
   this.on("update",function() {
     this._running = uC.storage.get("__main__");
@@ -91,15 +107,13 @@
   });
   this.on("mount",function() {
     this.stop = function() { uC.storage.set("__main__",null); },
-    this.commands = [];
     this._ready = window.konsole._ready;
     new uR.Log({ parent: this, name: "Konsole" });
     window.konsole = this;
     this.addCommands = function() {
       uR.forEach(arguments,function(command) {
         var test = new uC.Test(command);
-        if (uC.storage.get("__main__") == command.name) {
-          uC.__running__ = test;
+        if (uC.storage.get("__main__") == test.name) {
           uR.ready(function() { test.start() });
         }
       });
