@@ -30,8 +30,8 @@
       uC.__selectors = uC.__selectors || {};
 
       var fnames = [
-        'click', 'changeValue', 'changeForm', 'wait','mouseClick', 'assert', 'assertNot', 'assertEqual', 'setPath',
-        'reloadWindow','checkResults', 'debugger', 'ajax'
+        'click', 'changeValue', 'changeForm', 'wait','mouseClick', 'assert', 'assertNot', 'assertEqual',
+        'setPathname','setHash','reloadWindow','checkResults', 'debugger', 'ajax'
       ];
       uR.forEach(fnames,function(fname) {
         this[fname] = function() {
@@ -130,11 +130,8 @@
         this.status = next.status = 'running';
 
         var result;
-        try {
-          result = (next.start || next.bind(this))(pass,fail);
-        } catch(e) {
-          fail(e);
-        }
+        try { result = (next.start || next.bind(this))(pass,fail); }
+        catch (e) { fail(e) }
         result && pass(result); // test functions that return truthy objects move to next test
         konsole.update();
       }
@@ -191,10 +188,11 @@
       return this.wait.apply(this,args).click.apply(this,args);
     }
 
-    do(message,context) {
+    do(message,context={}) {
       message = message || this.name;
+      this.name = this.name || message;
       function f(pass,fail) {
-        this.context = context || {};
+        this.context = context;
         pass("DO",message);
       };
       f._name = "DO "+message;
@@ -214,24 +212,28 @@
 
     /* after this are private methods, eg Test().action(args) is a wrapper around Test().then(_action(args)) */
 
-    _setPath(pathname,hash) {
-      if (!hash && ~pathname.indexOf("#")) {
-        [pathname,hash] = pathname.split("#");
-      }
-      return function (pass, fail) {
-        hash = hash || "#";
-        if (!hash.indexOf("#") == 0) { hash = "#" + hash }
-        if (pathname != window.location.pathname || hash != window.location.hash) {
+    _setPathname(pathname) {
+      return function setPath(pass, fail) {
+        if (pathname != window.location.pathname) {
           // this needs to set some kind of "resume" mark first
-          window.location = pathname + hash;
+          uR.route(pathname);
         } else {
           return true;
         }
       };
     }
 
+    _setHash(hash) {
+      return function setHash(pass,fail) {
+        if (!hash.indexOf("#") == 0) { hash = "#" + hash }
+        if (hash != window.location.hash) {
+          uR.route(hash);
+        }
+        return true;
+      }
+    }
     _reloadWindow() {
-      return function(pass,fail) {
+      return function reloadWindow(pass,fail) {
         this.completed.push("window reloaded");
         this._progress = uC.storage.set("__completed",this.completed);
         window.location.reload();
@@ -453,7 +455,7 @@
     _checkResults(key,value_func) {
       if (typeof key == "function") {
         value_func = key;
-        key = value_func.name;
+        key = value_func._name || value_func.name;
       }
       value_func = value_func || function() {
         var out = uC.find(key,"result");

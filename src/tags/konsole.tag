@@ -81,7 +81,8 @@
   }
 
   clear(e) {
-    e.item.command.mark("")
+    e.item.command.mark("");
+    (uC.storage.get("__name__") == e.item.name) && uC.storage.remove("__main__");
   }
 
   toggle(e) {
