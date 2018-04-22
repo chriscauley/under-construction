@@ -40,7 +40,7 @@
         <button class={ uR.config.btn_success } onclick={ konsole.autorun } if={ !_running }>
           <!-- #! TODO -->
           Auto-Run</button>
-        <button class={uR.config.btn_error } onclick={ uC.tests.clear() }
+        <button class={uR.config.btn_error } onclick={ uC.tests.clear }
                 style="float: right">Clear Tests</button>
       </div>
       <div class="collection">
