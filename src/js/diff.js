@@ -84,7 +84,7 @@ window.uC.lib.serialize = function serialize(obj) {
 }
 
 function _compareString(a,b,func) {
-  func = func || function(s) { return s.display || s; }
+  func = func || function(s) { return (s.display === undefined)?s:s.display }
   var comparison = "";
   var diff = JsDiff.diffLines(func(a) || "<i>[EMPTY STRING]</i>",func(b) || "<i>[EMPTY STRING]</i>");
   uR.forEach(diff, function(d) {
