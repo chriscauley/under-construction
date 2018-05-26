@@ -420,8 +420,8 @@
     _changeValue(element,value) {
       var changeValue = function changeValue(pass,fail) {
         element = uC.find(element,'changed')
-        if (element._query_selector) {
-          value = value || this.get(element._query_selector);
+        if (value === undefined && element._query_selector) {
+          value = this.get(element._query_selector) || "";
         }
         try {
           element.value = value;
