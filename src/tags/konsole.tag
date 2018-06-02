@@ -24,7 +24,7 @@
       uR.storage.set("ACTIVE_KONSOLE",!document.body.classList.contains("konsole-open"));
       return false;
     }
-  }.bind(this));
+  });
   uR.ready(function() {
     if (uR.storage.get("ACTIVE_KONSOLE")) { konsole._start(); };
   });
@@ -59,7 +59,10 @@
       </div>
     </ur-tab>
     <ur-tab title="Settings">
-      <!--<ur-form schema={ konsole.schema }></ur-form>-->
+      <button onclick={ () => uR.recorder.config.openEditor() }>Recorder Settings</button>
+    </ur-tab>
+    <ur-tab title="logs">
+      <ur-logger logger={ uR.recorder }></ur-logger>
     </ur-tab>
   </ur-tabs>
 

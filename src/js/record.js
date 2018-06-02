@@ -1,8 +1,10 @@
 uR.ready(function() {
-  if (!window.USE_KEY_LOGGER) { return; }
   if (!uR.storage.get("ACTIVE_KONSOLE")) { return; } // eventually needs to be a separate setting
+  if (!window.KLOGGER_SELECTOR) { return; }
+  var klogger_target = document.querySelector(window.KLOGGER_SELECTOR);
+  if (!klogger_target) { return console.warn("konsole logger cannot find target"); }
   uR.recorder = new uR.Log({name: "Mouse",update: function() { window.konsole.update() }});
-  var l = uR.recorder.log;
+  var l = uR.recorder;
   var moves = [];
   var last_target = undefined;
   var last_qs;
@@ -13,9 +15,11 @@ uR.ready(function() {
       try { e.target.matches(key) &&  matches.push(key) }
       catch(error) { }
     }
-    last_target = e.target;
-    last_qs = matches.join(", ");
-    return last_qs;
+    if (matches.length) {
+      last_target = e.target;
+      last_qs = matches.join(", ");
+      return last_qs;
+    }
   }
   function makeCopy() {
     var _moves = JSON.stringify(moves);
@@ -23,14 +27,20 @@ uR.ready(function() {
     return function copy() { uR.alert(_moves) }
   }
   function log(e) {
-    moves.length && l(moves.length + " moves",makeCopy());
+    if (!config.get(e.type)) { return }
+    config.get("mousemove") && moves.length && l(moves.length + " moves",makeCopy());
     l(e.type,[e.layerX,e.layerY],getMatchingElements(e));
   }
   function log_moves(e) {
+    if (!config.get("mousemove")) { return }
     if (e.target != last_target) { moves.push(getMatchingElements(e)) }
     moves.push([e.layerX,e.layerY]);
   }
-  document.addEventListener("mousedown",log);
-  document.addEventListener("mouseup",log)
+  var schema = [];
+  for (var type of ["mousedown","mouseup","click","change"]) {
+    document.addEventListener(type,log);
+    schema.push({ type: 'boolean', value: true, name: type, required: false })
+  }
+  var config = uR.recorder.config = new uR.Config("ur-recorder",schema);
   document.addEventListener("mousemove",log_moves)
 });
