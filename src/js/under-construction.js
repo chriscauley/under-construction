@@ -22,6 +22,7 @@
     },
     commands: [],
     changeElement(selector,value) {
+      if (typeof value == "function") { value = value() }
       if (Array.isArray(value)) { // checkbox or radio
         document.querySelectorAll(selector).forEach((e) => e.checked = false);
         return value.forEach((v) => uC.changeElement(selector+"[value="+v+"]",v))
