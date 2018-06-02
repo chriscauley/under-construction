@@ -21,7 +21,23 @@
       }
     },
     commands: [],
+    changeElement(selector,value) {
+      if (Array.isArray(value)) { // checkbox or radio
+        document.querySelectorAll(selector).forEach((e) => e.checked = false);
+        return value.forEach((v) => uC.changeElement(selector+"[value="+v+"]",v))
+      }
+      var element = document.querySelector(selector);
+      if (!element) { throw "NotImplemented! Cannot find element" }
+      if (element.type == "checkbox" || element.type == "radio") {
+        if (element.value != value) { throw "NotImplemented! Value mismatch." }
+        element.checked = "checked"
+      } else {
+        element.value = value;
+      }
+      element.dispatchEvent(new Event("change"));
+      element.dispatchEvent(new Event("blur"));
+      return element;
+    }
   };
   window.u$ = {};
-
 })();

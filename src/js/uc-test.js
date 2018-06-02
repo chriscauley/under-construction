@@ -424,9 +424,7 @@
           value = this.get(element._query_selector) || "";
         }
         try {
-          element.value = value;
-          element.dispatchEvent(new Event("change"));
-          element.dispatchEvent(new Event("blur"));
+          uC.changeElement(element._query_selector,value);
           pass("changed",element._query_selector);
         } catch(e) {
           fail("Cannot change value on",element,e)
@@ -436,15 +434,19 @@
       changeValue._name = "change";
       return changeValue;
     }
-    _changeForm(values) {
+    _changeForm(form_selector,values) {
       var changeForm = function changeForm(pass,fail) {
+        if (values) {
+          var form = document.querySelector(form_selector);
+        } else {
+          values = form_selector;
+          form = document;
+        }
         values = values || this.context.form || this.context;
+        if (typeof values == "function") { values = values() }
         var changed = [];
         for (var key in values) {
-          var element = document.querySelector(key);
-          element.value = values[key];
-          element.dispatchEvent(new Event("change"));
-          element.dispatchEvent(new Event("blur"));
+          var element = uC.changeElement(`${form_selector} [name="${key}"]`,values[key]);
           changed.push(element);
         }
         pass("Changed form",key,changed.length+" elements")
