@@ -215,11 +215,10 @@
     _setPathname(pathname) {
       return function setPath(pass, fail) {
         if (pathname != window.location.pathname) {
-          // this needs to set some kind of "resume" mark first
-          uR.route(pathname);
-        } else {
-          return true;
+          // #! TODO: this needs to set some kind of "resume" mark first
+          return uR.route(pathname,{on: { mount: pass } })
         }
+        pass();
       };
     }
 
@@ -227,9 +226,9 @@
       return function setHash(pass,fail) {
         if (!hash.indexOf("#") == 0) { hash = "#" + hash }
         if (hash != window.location.hash) {
-          uR.route(hash);
+          return uR.route(hash,{on: { mount: pass } });
         }
-        return true;
+        pass();
       }
     }
     _reloadWindow() {
