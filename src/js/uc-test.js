@@ -31,7 +31,7 @@
 
       var fnames = [
         'click', 'changeValue', 'changeForm', 'wait','mouseClick', 'assert', 'assertNot', 'assertEqual',
-        'setPathname','setHash','reloadWindow','checkResults', 'debugger', 'ajax'
+        'route', 'setPathname','setHash','reloadWindow','checkResults', 'debugger', 'ajax'
       ];
       uR.forEach(fnames,function(fname) {
         this[fname] = function() {
@@ -213,6 +213,7 @@
     /* after this are private methods, eg Test().action(args) is a wrapper around Test().then(_action(args)) */
 
     _setPathname(pathname) {
+      console.warn("uC.Test.setPathname is deprecated. Use uC.Test.route instead.")
       return function setPath(pass, fail) {
         if (pathname != window.location.pathname) {
           // #! TODO: this needs to set some kind of "resume" mark first
@@ -223,6 +224,7 @@
     }
 
     _setHash(hash) {
+      console.warn("uC.Test.setHash is deprecated. Use uC.Test.route instead.")
       return function setHash(pass,fail) {
         if (!hash.indexOf("#") == 0) { hash = "#" + hash }
         if (hash != window.location.hash) {
@@ -230,6 +232,14 @@
         }
         pass();
       }
+    }
+
+    _route(url) {
+      function route(pass,fail) {
+        return uR.route(url,{on: { mount: pass } });
+      }
+      route._name = `route to ${url}`;
+      return route;
     }
     _reloadWindow() {
       return function reloadWindow(pass,fail) {

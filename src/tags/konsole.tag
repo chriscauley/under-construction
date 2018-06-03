@@ -6,7 +6,6 @@
       riot.mount("konsole");
       uR.storage.get("KONSOLE_UP") && document.body.classList.add("konsole-open");
       konsole._start = function() {};
-      setTimeout(function() { document.querySelector("konsole ur-tabs").classList.add("default"); },500)
     },
     schema:[],
   };
@@ -32,7 +31,7 @@
 
 <konsole>
   <button class="toggle" onclick={ toggle }></button>
-  <ur-tabs>
+  <ur-tabs class="default">
     <ur-tab class="commands" title="Commands">
       <div>
         <button class={ uR.config.btn_success } onclick={ konsole.stop } if={ _running }>
