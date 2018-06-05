@@ -20,6 +20,7 @@
         user_id: uR.auth && uR.auth.user && uR.auth.user.id
       }
     },
+    MAX_PASS_MS: 10000, // how long to wait before failing a test step
     commands: [],
     changeElement(selector,value) {
       if (typeof value == "function") { value = value() }

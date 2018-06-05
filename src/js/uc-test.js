@@ -31,14 +31,14 @@
 
       var fnames = [
         'click', 'changeValue', 'changeForm', 'wait','mouseClick', 'assert', 'assertNot', 'assertEqual',
-        'route', 'setPathname','setHash','reloadWindow','checkResults', 'debugger', 'ajax'
+        'route', 'setPathname','setHash','reloadWindow','checkResults', 'debugger', 'ajax', 'shiftTime'
       ];
       uR.forEach(fnames,function(fname) {
         this[fname] = function() {
-          var args = arguments;
-          var f = this["_"+fname].bind(this);
+          let args = arguments;
+          let f = this["_"+fname].bind(this);
           if (typeof arguments[0] == "string") { uC.__selectors[arguments[0]] = 1; }
-          var f2 = function() {
+          let f2 = function() {
             return f.apply(this,[].slice.apply(args));
           }.bind(this)
           f2._name = name;
@@ -85,8 +85,8 @@
       uC._current_test = uC._current_test || this;
       var self = this;
       if (this.is_ready && this.step < this.queue.length) {
-        if (this.next_move && new Date().valueOf() < this.next_move) {
-          setTimeout(this.run, this.next_move - new Date().valueOf())
+        if (this.next_move && new uR.TrueDate().valueOf() < this.next_move) {
+          setTimeout(this.run, this.next_move - new uR.TrueDate().valueOf())
           return;
         }
         var next = this.queue[this.step]; // this is either a test or a function passed in via then
@@ -110,9 +110,10 @@
           self.completed.push(next._name || next.name);
           uC.tests.set(self.getStateHash(),next.status);
           self.step++;
-          self.next_move = self.delay && (new Date().valueOf() + self.delay);
+          self.next_move = self.delay && (new uR.TrueDate().valueOf() + self.delay);
           self.run();
         }
+        clearTimeout(this.fail_timeout);
         if (this.__completed && this.__completed.length) {
           return pass(this.__completed.shift()+" (skipped after reload)")
         }
@@ -122,11 +123,11 @@
           args.unshift("ERROR")
           args.unshift(self.step);
           self.log.apply(self,args);
-          clearInterval(self.active_interval)
           self.stop();
           self.mark("error");
           throw e;
         }
+        this.fail_timeout = setTimeout(() => fail("Test took longer than "+uC.MAX_PASS_MS+" ms"),uC.MAX_PASS_MS)
         this.status = next.status = 'running';
 
         var result;
@@ -166,6 +167,7 @@
       return this
     }
     start(pass,fail) {
+      window.Date = TimeShift.Date; // might need to be someplace else
       uC.__running__ = this;
       this.__completed = uC.storage.get("__completed");
       uC.storage.remove("__completed");
@@ -177,6 +179,8 @@
       this.run.bind(this)()
     }
     stop() {
+      clearInterval(this.active_interval);
+      clearTimeout(this.fail_timeout);
       this.is_ready = false;
       uC.__running__ = undefined;
     }
@@ -217,7 +221,7 @@
       return function setPath(pass, fail) {
         if (pathname != window.location.pathname) {
           // #! TODO: this needs to set some kind of "resume" mark first
-          return uR.route(pathname,{on: { mount: pass } })
+          return uR.route(pathname,{one: { route: pass } })
         }
         pass();
       };
@@ -228,7 +232,7 @@
       return function setHash(pass,fail) {
         if (!hash.indexOf("#") == 0) { hash = "#" + hash }
         if (hash != window.location.hash) {
-          return uR.route(hash,{on: { mount: pass } });
+          return uR.route(hash,{one: { route: pass } });
         }
         pass();
       }
@@ -236,7 +240,7 @@
 
     _route(url) {
       function route(pass,fail) {
-        return uR.route(url,{on: { mount: pass } });
+        return uR.route(url, {one: { route: pass } });
       }
       route._name = `route to ${url}`;
       return route;
@@ -326,16 +330,16 @@
       var self = this;
       function waitForFunction(pass,fail) {
         var name = func._name || func.name;
-        var start = new Date();
+        var start = new uR.TrueDate();
         self.active_interval = setInterval(function () {
           var out = func();
           if (out) {
             pass('waitedForFunction',name);
             clearInterval(self.active_interval);
           }
-          if (new Date() - start > max_ms) {
+          if (new uR.TrueDate() - start > max_ms) {
             clearInterval(self.active_interval);
-            fail(name,new Date() - start);
+            fail(name,new uR.TrueDate() - start);
           }
         }, interval_ms);
       }
@@ -509,6 +513,18 @@
         } else {
           pass("WARN","Result changed",name,diff,replace);
         }
+      }
+    }
+
+    _shiftTime(amount,unit) {
+      return function shiftTime(pass,fail) {
+        if (unit)  { // eg `this.shiftTime(1,'days') applies time delta
+          TimeShift.setTime(moment().add(amount,unit).valueOf())
+          return pass(`Time moved ${amount} ${unit}`);
+        }
+        // eg `this.shiftTime("2018-01-01")` would change the date
+        TimeShift.setTime(moment(amount).valueOf())
+        return pass(`Time set to ${moment().format("YYYY-MM-DD HH:mm")}`);
       }
     }
   }
