@@ -31,7 +31,8 @@
 
       var fnames = [
         'click', 'changeValue', 'changeForm', 'wait','mouseClick', 'assert', 'assertNot', 'assertEqual',
-        'route', 'setPathname','setHash','reloadWindow','checkResults', 'debugger', 'ajax', 'shiftTime'
+        'route', 'setPathname','setHash','reloadWindow','checkResults', 'debugger', 'ajax', 'shiftTime',
+        'comment',
       ];
       uR.forEach(fnames,function(fname) {
         this[fname] = function() {
@@ -84,11 +85,13 @@
     run() {
       uC._current_test = uC._current_test || this;
       var self = this;
+      if (this.step == this.queue.length) { clearTimeout(this.fail_timeout); }
       if (this.is_ready && this.step < this.queue.length) {
         if (this.next_move && new uR.TrueDate().valueOf() < this.next_move) {
           setTimeout(this.run, this.next_move - new uR.TrueDate().valueOf())
           return;
         }
+        clearTimeout(this.fail_timeout);
         var next = this.queue[this.step]; // this is either a test or a function passed in via then
         function pass() {
           var args = [].slice.call(arguments);
@@ -113,7 +116,6 @@
           self.next_move = self.delay && (new uR.TrueDate().valueOf() + self.delay);
           self.run();
         }
-        clearTimeout(this.fail_timeout);
         if (this.__completed && this.__completed.length) {
           return pass(this.__completed.shift()+" (skipped after reload)")
         }
@@ -192,7 +194,7 @@
       return this.wait.apply(this,args).click.apply(this,args);
     }
 
-    do(message,context={}) {
+    do(message,context={}) { // could this be made int _do and remove wrapper?
       message = message || this.name;
       this.name = this.name || message;
       function f(pass,fail) {
@@ -204,7 +206,7 @@
       return this;
     }
 
-    done(message) {
+    done(message) { //#! TODO is this necessary?
       message = message || this.name;
       function done(pass,fail) {
         pass("DONE", message);
@@ -237,10 +239,9 @@
         pass();
       }
     }
-
     _route(url) {
       function route(pass,fail) {
-        return uR.route(url, {one: { route: pass } });
+        uR.route(url, {one: { route: pass } });
       }
       route._name = `route to ${url}`;
       return route;
@@ -479,6 +480,8 @@
       return function checkResults(pass,fail) {
         key = key || uC._last_query_selector;
         var value = value_func();
+        // #! TODO: this next line is meant to allow data-target_time to load the textContent by triggering reflow
+        // value && value.offsetHeight; // force a reflow to make sure css/text content has been updated
         this._compareResults(key,value,pass,fail);
       }
     }
@@ -526,6 +529,14 @@
         TimeShift.setTime(moment(amount).valueOf())
         return pass(`Time set to ${moment().format("YYYY-MM-DD HH:mm")}`);
       }
+    }
+    _comment(message) {
+      // current sets a line for the sake of setting a line. Maybe merge with Test.test to make for grouping
+      function func(pass,fail) {
+        pass();
+      }
+      func._name = message
+      return func
     }
   }
 })();
