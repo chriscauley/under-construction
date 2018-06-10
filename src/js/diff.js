@@ -53,13 +53,15 @@ window.uC.lib.serialize = function serialize(obj) {
     }
   }
   if (obj instanceof HTMLElement) {
-    return {
+    var out = {
       type: "HTMLElement",
       outerHTML: obj.outerHTML,
       display: uR.escapeHTML(obj.innerText),
       hash: objectHash(obj.outerHTML),
       __str__: "<"+obj.tagName+">",
     }
+    html2canvas && html2canvas(obj).then(function(canvas) { out.dataURL = canvas.toDataURL(); });
+    return out;
   }
   if (typeof obj == "string") {
     return {
@@ -106,6 +108,7 @@ uC.lib.alertObject = function alertObject(obj) {
 
 uC.lib.alertDiff = function(old,serialized) {
   old = old || "";
+  var tabs = [];
   if (serialized.type == 'string' || serialized.type == 'json') {
     var tabs = [ { title: "diff", innerHTML: _compareString(old,serialized.display) } ];
   } else if (serialized.type == "HTMLElement") {
@@ -116,46 +119,42 @@ uC.lib.alertDiff = function(old,serialized) {
       }) },
       { title: "text", innerHTML: _compareString(old,serialized) },
     ]
-  } else if (serialized.type == 'image') {
-    if (!old || !old.dataURL) { // empty image
-      old = { dataURL: "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" };
-    }
-    if (!window.pixelmatch) {
-      uR.alert("Unable to diff because pixelmatch is not installed");
-      throw "Attempted to diff images w/o pixelmatch";
-    }
+  }
+  if (serialized.type == 'image' || serialized.dataURL) {
     var old_canvas,new_canvas;
-    function next() {
-      if (!old_canvas || !new_canvas) { return }
-      var width = Math.max(new_canvas.width,old_canvas.width);
-      var height = Math.max(new_canvas.height,old_canvas.height);
-      var diff_canvas = document.createElement("canvas");
-      diff_canvas.width = width;
-      diff_canvas.height = height;
-      var diff_ctx = diff_canvas.getContext("2d");
-      var diff = diff_ctx.createImageData(width,height);
-      pixelmatch(
-        old_canvas.getContext("2d").getImageData(0,0,width,height).data,
-        new_canvas.getContext("2d").getImageData(0,0,width,height).data,
-        diff.data,
-        width,
-        height,
-        {threshold:0}
-      )
-      diff_ctx.putImageData(diff,0,0);
-      function img(url) { return '<img src="'+url+'"/>' }
-      uR.alertElement("ur-tabs", {
-        className: 'uc default',
-        tabs: [
-          { title: "difference", innerHTML: img(diff_canvas.toDataURL()) },
-          { title: "old", innerHTML: img(old.dataURL) },
-          { title: "new", innerHTML: img(serialized.dataURL) },
-        ]
-      });
+    function img(url) { return '<img src="'+url+'"/>' }
+    tabs = [{ title: "new dataURL", innerHTML: img(serialized.dataURL) }].concat(tabs);
+    if (old && old.dataURL) {
+      tabs.push({ title: "old dataURL", innerHTML: img(old.dataURL) });
+      function loadDiffContent(riot_tag) {
+        if (!window.pixelmatch) {
+          return riot_tag.root.appendChild(uR.newElement("div",{innerHTML: "pixelmatch.js needed for image diff."}))
+        }
+        function next() {
+          if (!old_canvas || !new_canvas) { return }
+          var width = Math.max(new_canvas.width,old_canvas.width);
+          var height = Math.max(new_canvas.height,old_canvas.height);
+          var diff_canvas = document.createElement("canvas");
+          diff_canvas.width = width;
+          diff_canvas.height = height;
+          var diff_ctx = diff_canvas.getContext("2d");
+          var diff = diff_ctx.createImageData(width,height);
+          pixelmatch(
+            old_canvas.getContext("2d").getImageData(0,0,width,height).data,
+            new_canvas.getContext("2d").getImageData(0,0,width,height).data,
+            diff.data,
+            width,
+            height,
+            {threshold:0}
+          )
+          diff_ctx.putImageData(diff,0,0);
+          riot_tag.root.appendChild(diff_canvas);
+        }
+        uC.utils.urlToCanvas(old.dataURL,function(canvas) { old_canvas = canvas; next(); });
+        uC.utils.urlToCanvas(serialized.dataURL,function(canvas) { new_canvas = canvas; next(); });
+      }
+      tabs.push({ title: "diff dataURL", loadContent: loadDiffContent })
     }
-    uC.utils.urlToCanvas(old.dataURL,function(canvas) { old_canvas = canvas; next(); });
-    uC.utils.urlToCanvas(serialized.dataURL,function(canvas) { new_canvas = canvas; next(); });
-    return; // alert tabs happens after both images load, so exit
   }
   uR.alertElement("ur-tabs",{ className: "uc default", tabs: tabs });
 };
