@@ -15,14 +15,8 @@ var DEST = (argv._[0] == 'deploy')?"/var/www/uc.unrest.io/stable/":".dist/";
 var build_tasks = [];
 var JS_FILES = {
   vendor: [
-    "timeshift.js",
-    "beautify-css.min.js",
-    "beautify-html.min.js",
-    "beautify.min.js",
-    "diff.js",
-    "html2canvas.js",
-    "pixelmatch.js",
-  ].map(s => ".vendor/"+s),
+    ".vendor/*.js"
+  ],
   uc: [
     "src/js/under-construction.js",
     "src/js/uc-test.js",
@@ -33,7 +27,6 @@ var JS_FILES = {
     "src/tags/konsole.tag",
   ]
 };
-console.log(JS_FILES.vendor);
 
 LESS_FILES = ["less/base.less"];
 
@@ -45,9 +38,16 @@ gulp.task('build-css', function () {
     .pipe(gulp.dest(DEST));
 });
 
+
+
 for (let key in JS_FILES) {
   build_tasks.push("build-"+key);
   gulp.task('build-'+key, function () {
+    if (key == "vendor") {
+      return gulp.src(JS_FILES[key])
+        .pipe(concat(key + '-built.js'))
+        .pipe(gulp.dest(".dist/"));
+    }
     return gulp.src(JS_FILES[key])
       .pipe(sourcemaps.init())
       .pipe(riot())
