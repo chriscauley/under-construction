@@ -54,6 +54,7 @@ konsole {
     &:before { content: "^^" }
   }
   .close-konsole {
+    display: none;
     right: 0;
     &:before { content: "X" }
   }
@@ -71,7 +72,8 @@ body.konsole-open {
   konsole {
     top: 0;
     margin-top: 0;
-    .toggle:before { content: "vv" }
+    .toggle-konsole:before { content: "vv" }
+    .close-konsole { display: block; }
   }
 }
 
