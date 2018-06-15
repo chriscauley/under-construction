@@ -15,7 +15,7 @@ var DEST = (argv._[0] == 'deploy')?"/var/www/uc.unrest.io/stable/":".dist/";
 var build_tasks = [];
 var JS_FILES = {
   vendor: [
-    ".vendor/*.js"
+    "src/vendor/*.js"
   ],
   uc: [
     "src/js/under-construction.js",

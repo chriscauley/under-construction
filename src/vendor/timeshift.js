@@ -220,4 +220,4 @@
 		return "utc=" + this.utc.toUTCString() + "   local=" + utcToLocal(this.utc).toUTCString() + "   offset=" + timezoneOffset;
 	}
 
-}).call(typeof global !== 'undefined' ? global : window);
+}).call(typeof global !== 'undefined' ? global : this);
