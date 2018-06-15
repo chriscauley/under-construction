@@ -19,18 +19,23 @@
     if (event.keyCode == 75 && event.ctrlKey && event.shiftKey) {
       event.preventDefault();
       event.stopPropagation();
-      konsole.toggle();
-      uR.storage.set("ACTIVE_KONSOLE",!document.body.classList.contains("konsole-open"));
+      if (uR.storage.get("KONSOLE_ACTIVE")) {
+        konsole.toggle();
+      } else {
+        konsole._start();
+        uR.storage.set("KONSOLE_ACTIVE",1);
+      }
       return false;
     }
   });
   uR.ready(function() {
-    if (uR.storage.get("ACTIVE_KONSOLE")) { konsole._start(); };
+    if (uR.storage.get("KONSOLE_ACTIVE")) { konsole._start(); };
   });
 })();
 
 <konsole>
-  <button class="toggle" onclick={ toggle }></button>
+  <button class="toggle-konsole" onclick={ toggle }></button>
+  <button class="close-konsole" onclick={ close }></button>
   <ur-tabs class="default">
     <ur-tab class="commands" title="Commands">
       <div>
@@ -93,6 +98,11 @@
     cL[cL.contains(c)?"remove":"add"](c);
     uR.storage.set("KONSOLE_UP",cL.contains(c) || "");
   }
+  close(e) {
+    uR.storage.set("KONSOLE_ACTIVE",null);
+    this.stop();
+    this.unmount();
+  }
   autorun(e) {
     uC.commands.forEach(function(command) {
       if (uC.__running__) { return }
@@ -109,7 +119,10 @@
     uR.forEach(uR.__logs,function(l) { l.update_tag() })
   });
   this.on("mount",function() {
-    this.stop = function() { uC.storage.set("__main__",null); },
+    this.stop = function() {
+      uC.storage.set("__main__",null);
+      uC.__running__ && uC.__running__.stop();
+    };
     this._ready = window.konsole._ready;
     new uR.Log({ parent: this, name: "Konsole" });
     window.konsole = this;
