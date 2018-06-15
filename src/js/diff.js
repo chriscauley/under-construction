@@ -112,6 +112,10 @@ uC.lib.alertDiff = function(old,serialized) {
   if (serialized.type == 'string' || serialized.type == 'json') {
     var tabs = [ { title: "diff", innerHTML: _compareString(old,serialized.display) } ];
   } else if (serialized.type == "HTMLElement") {
+    var html_beautify = window.html_beautify || function(string) {
+      var url = 'https://cdnjs.cloudflare.com/ajax/libs/js-beautify/1.7.5/beautify-html.min.js';
+      return "No beautifier present, we recommend using "+url;
+    }
     // #! TODO: column/row classes should be configurable... maybe?
     var tabs = [
       { title: "html", innerHTML: _compareString(old,serialized,function(s) {
