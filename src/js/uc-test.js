@@ -241,6 +241,8 @@
     }
     _route(url) {
       function route(pass,fail) {
+        var _l = window.location;
+        if (url == _l.pathname + _l.search + _l.hash) { return "Already at "+url; }
         uR.route(url, {one: { route: pass } });
       }
       route._name = `route to ${url}`;
