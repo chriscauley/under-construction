@@ -38,8 +38,6 @@ gulp.task('build-css', function () {
     .pipe(gulp.dest(DEST));
 });
 
-
-
 for (let key in JS_FILES) {
   build_tasks.push("build-"+key);
   gulp.task('build-'+key, function () {
