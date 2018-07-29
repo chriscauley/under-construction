@@ -78,7 +78,8 @@
       uR.forEach(arguments || [],function(f) {
         var func = (typeof f == 'function')?f:function func() { this.log(f); };
         this.queue.push(func);
-        this.log(f.description || f._name || f.name);
+        const name = f.description || f._name || f.name;
+        this.log(name);
       }.bind(this));
       return this;
     }
@@ -93,8 +94,7 @@
         }
         clearTimeout(this.fail_timeout);
         var next = this.queue[this.step]; // this is either a test or a function passed in via then
-        function pass() {
-          var args = [].slice.call(arguments);
+        function pass(...args) {
           while (args[0] === true) { args.shift() }
 
           // use current log if no arguments applied

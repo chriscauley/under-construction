@@ -96,17 +96,16 @@ function _compareString(a,b,func) {
 }
 
 uC.lib.alertObject = function alertObject(obj) {
-  if (obj.type == "json") {
-    var tabs = [{ title: "json", innerHTML: "<pre>" + obj.display + "</pre>" }]
-  }
-  if (obj.type == "string") { throw("Not Implemented #! TODO"); }
-  if (obj.type == "HTMLElement") { throw("Not Implemented #! TODO"); }
-  if (obj.type == "image") { throw("Not Implemented #! TODO"); }
-  uR.alertElement("ur-tabs", { className: "uc default", tabs: tabs });
+  uC.lib.alertDiff(obj,uC.NO_DIFF);
 }
 
 
 uC.lib.alertDiff = function(old,serialized) {
+  const NO_DIFF = serialized === uC.NO_DIFF; // used to unchanged object
+  if (NO_DIFF) {
+    serialized = old;
+    old = undefined;
+  }
   old = old || "";
   var tabs = [];
   if (serialized.type == 'string' || serialized.type == 'json') {
@@ -127,7 +126,8 @@ uC.lib.alertDiff = function(old,serialized) {
   if (serialized.type == 'image' || serialized.dataURL) {
     var old_canvas,new_canvas;
     function img(url) { return '<img src="'+url+'"/>' }
-    tabs = [{ title: "new dataURL", innerHTML: img(serialized.dataURL) }].concat(tabs);
+    const title = NO_DIFF?"datURL":"new dataURL";
+    tabs = [{ title: title, innerHTML: img(serialized.dataURL) }].concat(tabs);
     if (old && old.dataURL) {
       tabs.push({ title: "old dataURL", innerHTML: img(old.dataURL) });
       function loadDiffContent(riot_tag) {
@@ -166,6 +166,7 @@ uC.lib.alertDiff = function(old,serialized) {
 window.uC.lib.diff = (function() {
   class Diff {
     constructor(a,b) {
+      console.error("diff!!!");
       this.a = a;
       this.b = b;
     }
