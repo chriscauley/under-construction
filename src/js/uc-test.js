@@ -19,6 +19,8 @@
       });
       this.queue = [];  // functions/test to execute
       this.completed = []; // strings of completed queue objects
+      this.diff_links = []; // functions to open the diff popups
+      this.replace_links = []; // functions to accept changes
       var f0 = functions[0];
       this.name = this._name || this.name || (functions.length?(f0._name || f0.name):(options.name || "UNNAMED"));
       this.log = new uR.Log({name: this.name, mount_to: "#command_log_"+this.id});
@@ -360,7 +362,6 @@
 
     _assertNot(f,name) {
       var self = this;
-      // this may seem silly, but it's really useful because it's often times hard to flip the sign of the assertion function
       return function(pass,fail) {
         if (typeof f  == "string") { var qs=f; f = function assertExists() { return uC.find(qs) } }
         var out = f();
@@ -494,19 +495,29 @@
       var serialized, match;
       serialized = uC.lib.serialize(value); // convert it to a serialized object
       match = old && (old.hash == serialized.hash);
+      const diff_links = this.diff_links
+      const series_index = diff_links.length;
       if (match) {
+        function f() {
+          uC.lib.alertObject(serialized,{ series: diff_links, series_index: series_index });
+        }
+        diff_links.push(f);
         var view = {
-          click: function() { uC.lib.alertObject(serialized); },
+          click: f,
           className: 'fa fa-search-plus',
           title: "View Details",
         };
         pass("Result: ",name,"is unchanged", view);
       } else {
+        function f() {
+          uC.lib.alertDiff(old,serialized,{ series: diff_links, series_index: series_index });
+        }
+        diff_links.push(f);
         var diff = {
           className: "diff",
           _name: "diff",
           title: "View diff",
-          click: function() { uC.lib.alertDiff(old,serialized); },
+          click: f,
         }
         function replace(){
           uC.results.set(composit_key,serialized);
@@ -516,10 +527,10 @@
           pass("Result set",name,diff,replace());
         } else {
           pass("WARN","Result changed",name,diff,replace);
+          this.replace_links.push(replace);
         }
       }
     }
-
     _shiftTime(amount,unit) {
       return function shiftTime(pass,fail) {
         if (unit)  { // eg `this.shiftTime(1,'days') applies time delta

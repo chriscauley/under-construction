@@ -60,12 +60,12 @@ function _compareString(a,b,func) {
   return "<div class='flexy'><pre>"+comparison+"</pre></div>";
 }
 
-uC.lib.alertObject = function alertObject(obj) {
-  uC.lib.alertDiff(obj,uC.NO_DIFF);
+uC.lib.alertObject = function alertObject(obj,opts={}) {
+  uC.lib.alertDiff(obj,uC.NO_DIFF,opts={});
 }
 
 
-uC.lib.alertDiff = function(old,serialized) {
+uC.lib.alertDiff = function(old,serialized,opts={}) {
   const NO_DIFF = serialized === uC.NO_DIFF; // used to unchanged object
   if (NO_DIFF) {
     serialized = old;
@@ -125,6 +125,30 @@ uC.lib.alertDiff = function(old,serialized) {
       tabs.push({ title: "diff dataURL", loadContent: loadDiffContent })
     }
   }
-  uR.alertElement("ur-tabs",{ className: "uc default", tabs: tabs });
+  uR.alertElement("ur-tabs",{
+    className: "uc default",
+    tabs: tabs,
+    one: {
+      mount: function() {
+        const index = opts.series_index;
+        const links = opts.series;
+        const parent = this.root.querySelector(".tab-wrapper")
+        if (index) {
+          uR.newElement("div",{
+            parent: parent,
+            onclick: links[index-1],
+            className: "link link-prev fa fa-chevron-left",
+          })
+        }
+        if (links[index+1]) {
+          uR.newElement("div",{
+            parent: parent,
+            onclick: links[index+1],
+            className: "link link-next fa fa-chevron-right",
+          })
+        }
+      }
+    }
+  });
 };
 })()
