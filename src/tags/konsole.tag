@@ -57,6 +57,9 @@
             <label class="fa fa-plus-circle right command-toggle" for="command_toggle_{ command.id }"></label>
             <label class="fa fa-minus-circle right" for="command_toggle_null"></label>
             <i class="fa fa-trash right" onclick={ parent.parent.parent.clear }></i>
+            <a class="right pointer" onclick={ parent.parent.parent.replaceAll } if={ command.replace_links.length }>
+              <b>Replace All ({ command.replace_links.length })</b>
+            </a>
           </div>
           <ur-logger command={ command }></ur-logger>
        </li>
@@ -103,6 +106,15 @@
     this.stop();
     this.unmount();
   }
+  replaceAll(e) {
+    const command = e.item.command;
+    const replaces = Array.from(document.querySelectorAll("#command_log_"+command.id+" .kwarn .function"));
+    replaces.map(e => {
+      e.click();
+      command.replace_links.shift();
+    });
+  }
+
   autorun(e) {
     uC.commands.forEach(function(command) {
       if (uC.__running__) { return }
