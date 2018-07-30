@@ -23,7 +23,10 @@
       this.diff_links = []; // functions to open the diff popups
       this.replace_links = []; // functions to accept changes
       var f0 = functions[0];
-      this.name = this._name || this.name || (functions.length?(f0._name || f0.name):(options.name || "UNNAMED"));
+      this.name = this._name || this.name || (f0 && (f0._name || f0.name)) || options.name;
+      if (!this.name) { console.warn("Test does not have name. Not sure what this will do") }
+      this.results = new uR.Storage("__uc-results/"+this.name);
+
       this.log = new uR.Log({name: this.name, mount_to: "#command_log_"+this.id});
       this.parent = options.parent;
       this.depth = this.parent?(this.parent.depth+1):0;
@@ -58,6 +61,10 @@
       });
       this.mark(uC.tests.get(this.name));
       this.getStateHash();
+    }
+
+    reset() {
+      this.results.clear();
     }
 
     getStateHash(name) {
@@ -174,8 +181,11 @@
     start(pass,fail) {
       window.Date = TimeShift.Date; // might need to be someplace else
       uC.__running__ = this;
+
+      // restore halfway results for path changing tests
       this.__completed = uC.storage.get("__completed");
       uC.storage.remove("__completed");
+
       var toggler = document.querySelector("[for=command_toggle_"+this.id+"]");
       toggler && toggler.click();
       this.pass = pass || this.pass;
@@ -491,7 +501,7 @@
     _compareResults(key,value,pass,fail,name) {
       name = name || key
       var composit_key = this.getStateHash(key);
-      var old = uC.results.get(composit_key);
+      var old = this.results.get(composit_key);
       if (old && old.dataURL) { old.click = function() { window.open(old.dataURL) } }
       var serialized, match;
       serialized = uC.lib.serialize(value); // convert it to a serialized object
@@ -520,8 +530,9 @@
           title: "View diff",
           click: f,
         }
+        const self = this;
         function replace(){
-          uC.results.set(composit_key,serialized);
+          self.results.set(composit_key,serialized);
           return "updated!"
         }
         if (uC.CANNONICAL) {

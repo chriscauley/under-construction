@@ -5,7 +5,6 @@
   window.uC = {
     NO_DIFF: {},
     storage: new uR.Storage(PREFIX),
-    results: new uR.Storage("__uc-results/"),
     tests: new uR.Storage("__uc-tests/"),
     proxy: {
       send: window.XMLHttpRequest.prototype.send,
