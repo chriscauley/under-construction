@@ -12,10 +12,11 @@
       var functions = [];
       this.data = {};
       this.context = {};
-      uR.forEach(arguments,function(arg) {
+      uR.forEach(arguments,(arg) => {
         if (typeof arg == "object") { options = arg }
         if (typeof arg == 'function') { functions.push(arg) }
-        if (typeof arg == 'string') { self.name = arg };
+        if (typeof arg == 'string') { this.name = arg };
+        if (arg && arg.edit) { this.edit = () => arg.edit() }
       });
       this.queue = [];  // functions/test to execute
       this.completed = []; // strings of completed queue objects

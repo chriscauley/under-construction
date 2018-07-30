@@ -54,10 +54,13 @@
           <div class="collection-header { command.status }">
             <i class="fa fa-play-circle" onclick={ parent.parent.parent.run }></i>
             { command.name }
-            <label class="fa fa-plus-circle right command-toggle" for="command_toggle_{ command.id }"></label>
-            <label class="fa fa-minus-circle right" for="command_toggle_null"></label>
-            <i class="fa fa-trash right" onclick={ parent.parent.parent.clear }></i>
-            <a class="right pointer" onclick={ parent.parent.parent.replaceAll } if={ command.replace_links.length }>
+            <div class="icons right">
+              <label class="fa fa-plus-circle command-toggle" for="command_toggle_{ command.id }"></label>
+              <label class="fa fa-minus-circle" for="command_toggle_null"></label>
+              <i class="fa fa-trash" onclick={ parent.parent.parent.clear }></i>
+              <i class="fa fa-edit" if={ command.edit } onclick={ command.edit }></i>
+            </div>
+            <a class="pointer" onclick={ parent.parent.parent.replaceAll } if={ command.replace_links.length }>
               <b>Replace All ({ command.replace_links.length })</b>
             </a>
           </div>

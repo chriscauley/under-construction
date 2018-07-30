@@ -61,7 +61,7 @@ function _compareString(a,b,func) {
 }
 
 uC.lib.alertObject = function alertObject(obj,opts={}) {
-  uC.lib.alertDiff(obj,uC.NO_DIFF,opts={});
+  uC.lib.alertDiff(obj,uC.NO_DIFF,opts);
 }
 
 
