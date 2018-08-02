@@ -349,7 +349,7 @@
         self.active_interval = setInterval(function () {
           var out = func();
           if (out) {
-            pass('waitedForFunction',name);
+            name.startsWith("wait")?pass(name):pass('waitedForFunction',name);
             clearInterval(self.active_interval);
           }
           if (new uR.TrueDate() - start > max_ms) {
@@ -504,44 +504,49 @@
       var old = this.results.get(composit_key);
       if (old && old.dataURL) { old.click = function() { window.open(old.dataURL) } }
       var serialized, match;
-      serialized = uC.lib.serialize(value); // convert it to a serialized object
-      match = old && (old.hash == serialized.hash);
-      const diff_links = this.diff_links
-      const series_index = diff_links.length;
-      if (match) {
-        function f() {
-          uC.lib.alertObject(serialized,{ series: diff_links, series_index: series_index });
+      uC.lib.serialize(value).then( serialized => {
+        match = old && (old.hash == serialized.hash);
+        const diff_links = this.diff_links;
+        const alert_opts = {
+          series: diff_links,
+          series_index: diff_links.length,
+          title: this.last_comment,
         }
-        diff_links.push(f);
-        var view = {
-          click: f,
-          className: 'fa fa-search-plus',
-          title: "View Details",
-        };
-        pass("Result: ",name,"is unchanged", view);
-      } else {
-        function f() {
-          uC.lib.alertDiff(old,serialized,{ series: diff_links, series_index: series_index });
-        }
-        diff_links.push(f);
-        var diff = {
-          className: "diff",
-          _name: "diff",
-          title: "View diff",
-          click: f,
-        }
-        const self = this;
-        function replace(){
-          self.results.set(composit_key,serialized);
-          return "updated!"
-        }
-        if (uC.CANNONICAL) {
-          pass("Result set",name,diff,replace());
+        if (match) {
+          function f() {
+            uC.lib.alertObject(serialized,alert_opts);
+          }
+          diff_links.push(f);
+          var view = {
+            click: f,
+            className: 'fa fa-search-plus',
+            title: "View Details",
+          };
+          pass("Result: ",name,"is unchanged", view);
         } else {
-          pass("WARN","Result changed",name,diff,replace);
-          this.replace_links.push(replace);
+          function f() {
+            uC.lib.alertDiff(old,serialized,alert_opts)
+          }
+          diff_links.push(f);
+          var diff = {
+            className: "diff",
+            _name: "diff",
+            title: "View diff",
+            click: f,
+          }
+          const self = this;
+          function replace(){
+            self.results.set(composit_key,serialized);
+            return "updated!"
+          }
+          if (uC.CANNONICAL) {
+            pass("Result set",name,diff,replace());
+          } else {
+            pass("WARN","Result changed",name,diff,replace);
+            this.replace_links.push(replace);
+          }
         }
-      }
+      })
     }
     _shiftTime(amount,unit) {
       return function shiftTime(pass,fail) {
@@ -557,6 +562,7 @@
     _comment(message) {
       // current sets a line for the sake of setting a line. Maybe merge with Test.test to make for grouping
       function func(pass,fail) {
+        this.last_comment = message;
         pass();
       }
       func._name = message

@@ -41,11 +41,13 @@
        typeof element == "string": Run document.querySelector (maybe someday uC.test.root.querySelector)
        else: element should be an HTMLElement
     */
+    const original = element;
     element = element || uC._last_active_element;
     if (typeof element == "string") {
       uC._last_query_selector  = element;
       element = document.querySelector(element);
       if (element) { element._query_selector = uC._last_query_selector; }
+      else { console.warn(original,"I looked for this selector but couldn't find it. Might be relevant to your next error. TBH IDK SMH") }
     }
     element && element.setAttribute("uc-state",attr);
     uC._last_active_element = element;

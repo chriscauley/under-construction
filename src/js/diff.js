@@ -8,46 +8,53 @@ uC.lib.truncate = function truncate(string,number) {
 }
 
 window.uC.lib.serialize = function serialize(obj) {
+  const resolve = function(obj) {
+    return Promise.resolve(obj)
+  }
   if (obj instanceof HTMLElement && obj.tagName == "CANVAS") {
     var src = obj.toDataURL();
-    return {
+     return resolve({
       type: "image",
       dataURL: src,
       hash: objectHash(src),
       __str__: "<canvas>",
-    }
+    })
   }
-  if (obj instanceof HTMLElement) {
+  else if (obj instanceof HTMLElement) {
     var out = {
       type: "HTMLElement",
       outerHTML: obj.outerHTML,
       display: uR.escapeHTML(obj.innerText),
-      hash: objectHash(obj.outerHTML),
       __str__: "<"+obj.tagName+">",
     }
-    html2canvas && html2canvas(obj).then(function(canvas) { out.dataURL = canvas.toDataURL(); });
-    return out;
+    return new Promise((resolve,reject) => {
+      html2canvas && html2canvas(obj,uC.html2canvas_opts).then(function(canvas) {
+        out.dataURL = canvas.toDataURL()
+        out.hash = objectHash(out.dataURL)
+        resolve(out)
+      });
+    })
   }
-  if (typeof obj == "string") {
-    return {
+  else if (typeof obj == "string") {
+    return resolve({
       type: 'string',
       display: obj,
       hash: objectHash(obj),
       __str__: uC.lib.truncate(obj),
-    }
+    })
   }
-  try {
-    return {
+  else try {
+    return resolve({
       type: "json",
       display: JSON.stringify(obj,null,2),
       hash: objectHash(obj),
       __str__: "JSON",
-    }
+    })
   } catch (e) { }
-  return {
+  return resolve({
     type: "unknown",
     hash: objectHash((obj === undefined)?"undefined":obj),
-  }
+  })
 }
 
 function _compareString(a,b,func) {
@@ -130,21 +137,30 @@ uC.lib.alertDiff = function(old,serialized,opts={}) {
     tabs: tabs,
     one: {
       mount: function() {
-        const index = opts.series_index;
-        const links = opts.series;
         const parent = this.root.querySelector(".tab-wrapper")
-        if (index) {
-          uR.newElement("div",{
-            parent: parent,
-            onclick: links[index-1],
-            className: "link link-prev fa fa-chevron-left",
-          })
+        if (opts.series) {
+          const links = opts.series;
+          const index = opts.series_index;
+          if (index) {
+            uR.newElement("div",{
+              parent: parent,
+              onclick: links[index-1],
+              className: "link link-prev fa fa-chevron-left",
+            })
+          }
+          if (links[index+1]) {
+            uR.newElement("div",{
+              parent: parent,
+              onclick: links[index+1],
+              className: "link link-next fa fa-chevron-right",
+            })
+          }
         }
-        if (links[index+1]) {
+        if (opts.title) {
           uR.newElement("div",{
             parent: parent,
-            onclick: links[index+1],
-            className: "link link-next fa fa-chevron-right",
+            className: "diff-title",
+            innerText: opts.title,
           })
         }
       }

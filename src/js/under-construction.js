@@ -6,6 +6,7 @@
     NO_DIFF: {},
     storage: new uR.Storage(PREFIX),
     tests: new uR.Storage("__uc-tests/"),
+    html2canvas_opts: {logging: false,},
     proxy: {
       send: window.XMLHttpRequest.prototype.send,
       open: window.XMLHttpRequest.prototype.open,
