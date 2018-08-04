@@ -11,11 +11,12 @@
 ur-tabs.uc.default {
   .tab-wrapper { height: 100%; }
   .tab-anchors a {
+    border: 1px solid;
     color: inherit;
     cursor: pointer;
     display: inline-block;
+    height: @tab-height;
     padding: 5px;
-    border: 1px solid;
     &.active { text-decoration: underline; }
   }
   ur-tab {
@@ -28,6 +29,7 @@ ur-tabs.uc.default {
     width: 650px;
   }
   .link {
+    background: rgba(0,0,0,0.05);
     cursor: pointer;
     display: block;
     font-size: 2em;
@@ -35,6 +37,8 @@ ur-tabs.uc.default {
     padding: 0.5em 0.25em ;
     position: absolute;
     top: 50%;
+    z-index: 20;
+    &.link-prev { left: 0 }
     &.link-next { right: 0 }
     &:hover { background: rgba(0,0,0,0.2); }
   }
@@ -44,6 +48,7 @@ ur-tabs.uc.default {
     right: 0;
     padding: 0.5em 0.25em ;
     position: absolute;
+    z-index: 999999;
     &:hover { background: #ddd }
   }
 }
@@ -61,5 +66,17 @@ ur-tabs.uc { /* currently only used */
   .flexy {
     display: flex;
     .col-6 { flex-basis: 50%; }
+  }
+  .tab-wrapper {
+    padding-top: 30px;
+    box-sizing: border-box;
+    .tab-anchors { max-height: 30px; position: absolute; top: 0 }
+  }
+}
+
+.disable_css_transitions {
+  *,*:before,*:after {
+    animation: unset;
+    transition: unset !important;
   }
 }

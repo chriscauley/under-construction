@@ -1,9 +1,10 @@
+@tab-height: 32px;
 konsole {
   display: flex;
   flex-flow: column;
-  top: 100%; // offscreen unless body has .konsole-open
-  height: 100%;
-  margin-top: -32px;
+  top: 100%; // offscreen unless konsole.open
+  height: @tab-height;
+  margin-top: -@tab-height;
   overflow-y: auto;
   position: fixed;
   right: 0;
@@ -11,10 +12,10 @@ konsole {
   z-index: 99999; // 100,000 is the ur-modal z-index
   ur-tabs { background: rgba(200,200,200,0.8); flex-basis: 100%; height: 100%; }
   ur-tabs.default {
-    padding-top: 32px;
+    padding-top: @tab-height;
     .tab-anchors {
-      left: 32px;
-      right: 32px;
+      left: @tab-height;
+      right: @tab-height;
       position: absolute;
       top: 0;
       a { background: rgba(255,255,255,0.8); }
@@ -59,11 +60,11 @@ konsole {
     &:before { content: "X" }
   }
   .toggle-konsole, .close-konsole {
-    height: 32px;
+    height: @tab-height;
     position: absolute;
     text-align: center;
     top: 0;
-    width: 32px;
+    width: @tab-height;
   }
 }
 

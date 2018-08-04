@@ -25,6 +25,7 @@ var JS_FILES = {
     "src/js/utils.js",
     "src/js/record.js",
     "src/tags/konsole.tag",
+    "src/tags/compare-images.tag",
   ]
 };
 

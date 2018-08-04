@@ -71,11 +71,13 @@ selectImage(e) {
   :scope .images { position: relative; }
   :scope .images img {
     left: 0;
+    opacity: 0;
     position: absolute;
     top: 0;
     z-index: 0;
   }
   :scope .images img.selected {
+    opacity: 1;
     z-index: 1;
   }
 </style>
