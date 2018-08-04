@@ -80,6 +80,8 @@ uC.lib.alertDiff = function(old,serialized,opts={}) {
   }
   old = old || "";
   var tabs = [];
+  const images = []
+  const image_names = []
   if (serialized.type == 'string' || serialized.type == 'json') {
     var tabs = [ { title: "diff", innerHTML: _compareString(old,serialized.display) } ];
   } else if (serialized.type == "HTMLElement") {
@@ -99,12 +101,15 @@ uC.lib.alertDiff = function(old,serialized,opts={}) {
     var old_canvas,new_canvas;
     function img(url) { return '<img src="'+url+'"/>' }
     const title = NO_DIFF?"datURL":"new dataURL";
-    tabs = [{ title: title, innerHTML: img(serialized.dataURL) }].concat(tabs);
+    images.push(serialized.dataURL)
+    image_names.push("New Image")
     if (old && old.dataURL) {
-      tabs.push({ title: "old dataURL", innerHTML: img(old.dataURL) });
-      function loadDiffContent(riot_tag) {
+      images.push(old.dataURL)
+      image_names.push("Old Image")
+      function loadDiffContent(callback) {
         if (!window.pixelmatch) {
-          return riot_tag.root.appendChild(uR.newElement("div",{innerHTML: "pixelmatch.js needed for image diff."}))
+          console.error("Pixel match not loaded")
+          return
         }
         function next() {
           if (!old_canvas || !new_canvas) { return }
@@ -122,16 +127,29 @@ uC.lib.alertDiff = function(old,serialized,opts={}) {
             width,
             height,
             {threshold:0}
+            // #! TODO in an ideal world, we wouldn't use a threshold of 0
+            // but since the comparative hash is based off the dataURL,
+            // a single pixel difference of #000001 will trigger the test to fail
+            // pixelmatch needs to reflect that
           )
           diff_ctx.putImageData(diff,0,0);
-          riot_tag.root.appendChild(diff_canvas);
+          callback(diff_canvas)
         }
         uC.utils.urlToCanvas(old.dataURL,function(canvas) { old_canvas = canvas; next(); });
         uC.utils.urlToCanvas(serialized.dataURL,function(canvas) { new_canvas = canvas; next(); });
       }
-      tabs.push({ title: "diff dataURL", loadContent: loadDiffContent })
+      images.push(loadDiffContent)
+      image_names.push("Difference")
     }
   }
+  images.length && tabs.unshift({
+    title: "images",
+    loadContent: (tag) => uR.newElement(
+      "compare-images",
+      { parent: tag.root, innerHTML: 'monkey' },
+      { images: images, image_names: image_names }
+    ),
+  })
   uR.alertElement("ur-tabs",{
     className: "uc default",
     tabs: tabs,
