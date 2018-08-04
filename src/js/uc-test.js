@@ -180,6 +180,7 @@
     }
     start(pass,fail) {
       window.Date = TimeShift.Date; // might need to be someplace else
+      document.body.classList.add(uC.TEST_CLASS)
       uC.__running__ = this;
 
       // restore halfway results for path changing tests
