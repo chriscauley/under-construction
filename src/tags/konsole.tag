@@ -4,7 +4,6 @@
     _start: function() {
       var k = document.body.appendChild(document.createElement("konsole"));
       riot.mount("konsole");
-      uR.storage.get("KONSOLE_UP") && document.body.classList.add("konsole-open");
       konsole._start = function() {};
     },
     schema:[],
@@ -33,7 +32,7 @@
   });
 })();
 
-<konsole>
+<konsole class={ className }>
   <button class="toggle-konsole" onclick={ toggle }></button>
   <button class="close-konsole" onclick={ close }></button>
   <ur-tabs class="default">
@@ -81,6 +80,7 @@
   var self = this;
 
   this.on('update',function() {
+    this.className = uR.storage.get("KONSOLE_UP")?"open":"";
     this.watch = [];
     for (var i=0; i < watch_keys.length; i++) {
       var k = watch_keys[i];
@@ -100,8 +100,8 @@
   }
 
   toggle(e) {
-    var c = "konsole-open";
-    var cL = document.body.classList;
+    var c = "open";
+    var cL = this.root.classList;
     cL[cL.contains(c)?"remove":"add"](c);
     uR.storage.set("KONSOLE_UP",cL.contains(c) || "");
   }
