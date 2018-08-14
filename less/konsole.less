@@ -1,16 +1,27 @@
 @tab-height: 32px;
+konsole button {
+  height: @tab-height;
+  line-height: @tab-height - 2;
+  padding: 0 5px;
+}
+
 konsole {
+  * { box-sizing: border-box; }
   display: flex;
   flex-flow: column;
-  top: 100%; // offscreen unless konsole.open
+  top: 100%; /* offscreen unless konsole.open */
   height: @tab-height;
   margin-top: -@tab-height;
   overflow-y: auto;
   position: fixed;
   right: 0;
   width: 500px;
-  z-index: 99999; // 100,000 is the ur-modal z-index
-  ur-tabs { background: rgba(200,200,200,0.8); flex-basis: 100%; height: 100%; }
+  z-index: 99999; /* 100,000 is the ur-modal z-index */
+  ur-tabs {
+    background: rgba(200,200,200,0.8);
+    flex-basis: 100%;
+    height: 100%;
+  }
   ur-tabs.default {
     padding-top: @tab-height;
     .tab-anchors {
@@ -18,7 +29,12 @@ konsole {
       right: @tab-height;
       position: absolute;
       top: 0;
-      a { background: rgba(255,255,255,0.8); }
+      a {
+        background: rgba(255,255,255,0.8);
+        height: @tab-height;
+        padding: 0 10px;
+        line-height: @tab-height - 2px;
+      }
     }
     ur-tab { height: 100%; width: 100%; }
   }
@@ -52,15 +68,13 @@ konsole {
   [data-lineno="0"] { border-top: 0; }
   .toggle-konsole {
     left: 0;
-    &:before { content: "^^" }
+    &:before { content: "vv" }
   }
   .close-konsole {
-    display: none;
     right: 0;
     &:before { content: "X" }
   }
   .toggle-konsole, .close-konsole {
-    height: @tab-height;
     position: absolute;
     text-align: center;
     top: 0;
@@ -72,8 +86,15 @@ konsole.open {
   top: 0;
   height: 100%;
   margin-top: 0;
-  .toggle-konsole:before { content: "vv" }
-  .close-konsole { display: block; }
+}
+
+konsole.closed {
+  width: auto;
+  .toggle-konsole {
+    position: static;
+    &:before { content: "uC"; }
+  }
+  ur-tabs, .close-konsole { display: none; }
 }
 
 konsole {

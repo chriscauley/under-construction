@@ -80,7 +80,7 @@
   var self = this;
 
   this.on('update',function() {
-    this.className = uR.storage.get("KONSOLE_UP")?"open":"";
+    this.className = uR.storage.get("KONSOLE_UP")?"open":"closed";
     this.watch = [];
     for (var i=0; i < watch_keys.length; i++) {
       var k = watch_keys[i];
@@ -100,10 +100,8 @@
   }
 
   toggle(e) {
-    var c = "open";
-    var cL = this.root.classList;
-    cL[cL.contains(c)?"remove":"add"](c);
-    uR.storage.set("KONSOLE_UP",cL.contains(c) || "");
+    uR.storage.set("KONSOLE_UP",!uR.storage.get("KONSOLE_UP"))
+    this.update()
   }
   close(e) {
     uR.storage.set("KONSOLE_ACTIVE",null);
