@@ -21,7 +21,6 @@ ur-tabs.uc.default {
   }
   ur-tab {
     border: 1px solid;
-    box-sizing: border-box;
     height: 100%;
     max-width: 100%;
     overflow-y: auto;
@@ -59,6 +58,7 @@ ur-tab {
 }
 
 ur-tabs.uc { /* currently only used */
+  * { box-sizing: border-box; }
   pre {
     .added { background: #ddffdd; }
     .removed { background: #ffdddd; }
@@ -69,7 +69,6 @@ ur-tabs.uc { /* currently only used */
   }
   .tab-wrapper {
     padding-top: 30px;
-    box-sizing: border-box;
     .tab-anchors { max-height: 30px; position: absolute; top: 0 }
   }
 }
