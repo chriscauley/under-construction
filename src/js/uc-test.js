@@ -179,8 +179,9 @@
       return this
     }
     start(pass,fail) {
-      window.Date = TimeShift.Date; // might need to be someplace else
+      window.Date = TimeShift.Date; // might need to be somewhen else
       document.body.classList.add(uC.TEST_CLASS)
+      window.riot && window.riot.compile()
       uC.__running__ = this;
 
       // restore halfway results for path changing tests
@@ -256,7 +257,8 @@
     _route(url) {
       function route(pass,fail) {
         var _l = window.location;
-        uR.route(url, {one: { route: pass } });
+        uR.route(url);
+        pass("routed to ",url)
       }
       route._name = `route to ${url}`;
       return route;
@@ -551,12 +553,15 @@
     }
     _shiftTime(amount,unit) {
       return function shiftTime(pass,fail) {
+        // #! TODO the watcheTimers funciton checks all lunch time timers. Should be a generic timeout maybe?
         if (unit)  { // eg `this.shiftTime(1,'days') applies time delta
           TimeShift.setTime(moment().add(amount,unit).valueOf())
+          String.lunch.watchTimers() // updates lunchtime display boxes.
           return pass(`Time moved ${amount} ${unit}`);
         }
         // eg `this.shiftTime("2018-01-01")` would change the date
         TimeShift.setTime(moment(amount).valueOf())
+        String.lunch.watchTimers()
         return pass(`Time set to ${moment().format("YYYY-MM-DD HH:mm")}`);
       }
     }
