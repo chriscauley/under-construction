@@ -1,0 +1,13 @@
+ur-command {
+  li {
+    margin-left: 0.5rem;
+    .word { padding-left: 0.5rem }
+  }
+}
+
+.accord {
+  &.closed {
+    .accord-close, .accord-content { display: none; }
+  }
+  &:not(.closed) .accord-open { display: none; }
+}
