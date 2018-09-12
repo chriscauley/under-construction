@@ -33,8 +33,20 @@ uc-command .ur-accord {
 }
 
 .ur-accord {
-  &.closed {
-    > .ur-accord-header .ur-accord-close, > .ur-accord-content { display: none; }
+  position: relative;
+  > .ur-accord-content { display: none; }
+  > .ur-accord-toggle:before { content: "[+]"; }
+  &.open {
+    > .ur-accord-content { display: block; }
+    > .ur-accord-toggle:before { content: "[-]" }
   }
-  &:not(.closed) > .ur-accord-header .ur-accord-open { display: none; }
+  .ur-accord-toggle {
+    cursor: pointer;
+    left: 0;
+    position: absolute;
+    top: 0;
+  }
+  .ur-accord-header {
+    padding-left: 2em;
+  }
 }

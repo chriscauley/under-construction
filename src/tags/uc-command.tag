@@ -1,8 +1,7 @@
 <uc-command>
   <div class="ur-accord" id={ command.uid }>
+    <div class="ur-accord-toggle" onclick={ accord(command.uid) }></div>
     <div class="ur-accord-header { command.status }">
-      <i class="fa fa-plus-circle ur-accord-open" onclick={ accord(command.uid) }></i>
-      <i class="fa fa-minus-circle ur-accord-close" onclick={ accord(command.uid) }></i>
       { command.name }
       <div class="icons right">
         <i class="fa fa-play-circle" onclick={ start }></i>
@@ -15,14 +14,13 @@
     </div>
     <div class="ur-accord-content">
       <div each={ block,ib in command.blocks } key={ block.hash } class="block ur-accord" id={ block.uid }>
+        <div class="ur-accord-toggle" onclick={ accord(block.uid) }></div>
         <div class="ur-accord-header">
-          <i class="fa fa-plus-circle ur-accord-open" onclick={ accord(block.uid) }></i>
-          <i class="fa fa-minus-circle ur-accord-close" onclick={ accord(block.uid) }></i>
           <b>{ block.message }</b>
         </div>
         <ul class="ur-accord-content">
           <li each={ task, it in block.tasks } class="k{ task.status } ur-line">
-            <span each={ word in task.details } onclick={ word.click } title={ word.title }
+            <span each={ word in task.details } if={ word } onclick={ word.click } title={ word.title }
                   class={ word.className }>{ word._name }</span>
           </li>
         </ul>
@@ -31,9 +29,9 @@
   </div>
 
 accord(key) {
-  return () => document.getElementById(key).classList.toggle("closed")
+  return () => document.getElementById(key).classList.toggle("open")
 }
-this.on("before-mount",function() { this.command = opts.command })
+this.on("before-mount",function() { this.command = opts.command; })
 this.on("mount",() => { this.update() })
 this.on("update",() => {
   this.command.blocks.forEach(block => {

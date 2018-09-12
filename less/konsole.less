@@ -6,16 +6,14 @@ konsole button {
 }
 
 @media print {
-  konsole {
-    display: none !important;
-  }
+  konsole { display: none !important; }
 }
 
 konsole {
   * { box-sizing: border-box; }
   display: flex;
   flex-flow: column;
-  line-height: 1.5;
+  line-height: 1.2;
   top: 100%; /* offscreen unless konsole.open */
   height: @tab-height;
   margin-top: -@tab-height;
@@ -46,34 +44,6 @@ konsole {
     }
     ur-tab { height: 100%; width: 100%; }
   }
-  [data-lineno]:before {
-    content: attr(data-lineno);
-    display: inline-block;
-    padding-right: 5px;
-    text-align: right;
-    width: 2em;
-  }
-  [data-ms] {
-    position: relative;
-    padding-left: 75px;
-    &:after {
-      border-right: 1px rgba(0,0,0,0.5)  solid;
-      content: attr(data-ms);
-      display: inline-block;
-      left: 0;
-      margin-right: 5px;
-      padding-right: 5px;
-      position: absolute;
-      width: 75px;
-    }
-  }
-  [data-ms="START"] {
-    border-top: 1px solid rgba(0,0,0,0.9);
-    font-weight: bold;
-    margin-top: 3px;
-    padding-top: 3px;
-  }
-  [data-lineno="0"] { border-top: 0; }
   .toggle-konsole {
     left: 0;
     &:before { content: "vv" }

@@ -85,11 +85,11 @@
     indent() { return Array(this.depth+1).join("|"); }
     then() {
       uR.forEach([...arguments],(f) =>{
-        const name = f._description || f._name || f.name;
+        const name = f._description || f._name || f.name || undefined;
         this.last_block.tasks.push({
           action: f,
           name: name,
-          details: f.details || [(f.name+"()")],
+          details: f.details || [name],
         })
       });
       return this;
@@ -130,6 +130,8 @@
         function pass(...args) {
           while (args[0] === true) { args.shift() }
 
+          if (!args.length) { args = active_task.details.slice() }
+
           // if not a warning, mark it a success
           if (args[0] != "WARN") {
             args.unshift("SUCCESS");
@@ -154,7 +156,8 @@
           var args = [].slice.call(arguments);
           args.unshift("ERROR")
           args.unshift(self.step);
-          active_Test.details = args;
+          active_task.details = args;
+          active_task.status = 'error';
           self.stop();
           self.mark("error");
           throw e;
