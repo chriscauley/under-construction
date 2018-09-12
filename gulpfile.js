@@ -24,6 +24,7 @@ var JS_FILES = {
     "src/js/diff.js",
     "src/js/utils.js",
     "src/js/record.js",
+    "src/js/prepDetails.js",
     "src/tags/konsole.tag",
     "src/tags/compare-images.tag",
   ]
