@@ -1,0 +1,28 @@
+.ur-line {
+  padding-bottom: 0.25rem;
+  .word { margin-left: 0.25rem }
+}
+
+.ur-line .pointer { /* word can be clicked */
+  border-bottom: 2px solid;
+  cursor: pointer;
+  display: inline-block;
+  &.fa { border-bottom: none; }
+}
+
+.ur-line { /* word types */
+  .function { color: blue; }
+  .dataURL { color: green; background: rgba(0,255,0,0.05); }
+  .diff { color: red; }
+  .element {
+    color: green;
+    font-family: monospace;
+    font-weight: bold;
+    &:before { content: "<"; }
+    &:after { content: ">"; }
+  }
+  .undefined {
+    font-style: italic;
+    font-weight: bold;
+  }
+}

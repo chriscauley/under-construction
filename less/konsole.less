@@ -15,6 +15,7 @@ konsole {
   * { box-sizing: border-box; }
   display: flex;
   flex-flow: column;
+  line-height: 1.5;
   top: 100%; /* offscreen unless konsole.open */
   height: @tab-height;
   margin-top: -@tab-height;
@@ -23,6 +24,7 @@ konsole {
   right: 0;
   width: 500px;
   z-index: 99999; /* 100,000 is the ur-modal z-index */
+  .tab-wrapper { background: white; }
   ur-tabs {
     background: rgba(200,200,200,0.8);
     flex-basis: 100%;
@@ -101,52 +103,4 @@ konsole.closed {
     &:before { content: "uC"; }
   }
   ur-tabs, .close-konsole { display: none; }
-}
-
-konsole {
-  .pointer {
-    border-bottom: 2px solid;
-    cursor: pointer;
-    display: inline-block;
-    &.fa { border-bottom: none; }
-  }
-  .passed, .complete, .ksuccess, .success { /* #! TODO reconcile .k classses */
-    background: #AAFFAA;
-  }
-  .kwarn, .kwarning, .warning, .warn { /* #! TODO reconcile .k classses */
-    background: #fcf8e3;
-    .fa { color: #8a6d3b; }
-  }
-  .failed, .kerror, .error { /* #! TODO reconcile .k classses */
-    background: #e88;
-    .fa { color: #a94442; }
-  }
-  .running {
-    background: #AAAAFF;
-    .fa { color: #4244a9; }
-  }
-  .u { text-decoration: underline; }
-}
-
-konsole { /* word like classes in log */
-  .function { color: blue; }
-  .dataURL { color: green; background: rgba(0,255,0,0.05); }
-  .element {
-    color: green;
-    font-family: monospace;
-    font-weight: bold;
-    &:before { content: "<"; }
-    &:after { content: ">"; }
-  }
-  .undefined {
-    font-style: italic;
-    font-weight: bold;
-  }
-  .HTMLElement {
-    background: white;
-  }
-  .diff {
-    background: white;
-    color: red;
-  }
 }

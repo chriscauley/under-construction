@@ -10,10 +10,21 @@ uc-command {
   }
 }
 
-uc-command {
-  li.ur-line {
-    padding-bottom: 0.25rem;
-    .word { margin-left: 0.25rem }
+uc-command { /* line status classes */
+  .passed, .complete, .ksuccess, .success { /* #! TODO reconcile .k classses */
+    background: #AAFFAA;
+  }
+  .kwarn, .kwarning, .warning, .warn { /* #! TODO reconcile .k classses */
+    background: #fcf8e3;
+    .fa { color: #8a6d3b; }
+  }
+  .failed, .kerror, .error { /* #! TODO reconcile .k classses */
+    background: #e88;
+    .fa { color: #a94442; }
+  }
+  .running {
+    background: #AAAAFF;
+    .fa { color: #4244a9; }
   }
 }
 
