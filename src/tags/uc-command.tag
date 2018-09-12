@@ -1,15 +1,15 @@
 <uc-command>
-  <div class="ur-accord" each={ command in uC.commands } id={ command.uid }>
+  <div class="ur-accord" id={ command.uid }>
     <div class="ur-accord-header { command.status }">
       <i class="fa fa-plus-circle ur-accord-open" onclick={ accord(command.uid) }></i>
       <i class="fa fa-minus-circle ur-accord-close" onclick={ accord(command.uid) }></i>
       { command.name }
       <div class="icons right">
-        <i class="fa fa-play-circle" onclick={ parent.parent.parent.run }></i>
-        <i class="fa fa-trash" onclick={ parent.parent.parent.clear }></i>
+        <i class="fa fa-play-circle" onclick={ start }></i>
+        <i class="fa fa-trash" onclick={ clear }></i>
         <i class="fa fa-edit" if={ command.edit } onclick={ command.edit }></i>
       </div>
-      <a class="pointer" onclick={ parent.parent.parent.replaceAll } if={ command.replace_links.length }>
+      <a class="pointer" onclick={ replaceAll } if={ command.replace_links.length }>
         <b>Replace All ({ command.replace_links.length })</b>
       </a>
     </div>
@@ -21,9 +21,9 @@
           <b>{ block.message }</b>
         </div>
         <ul class="ur-accord-content">
-          <li each={ task, it in block.tasks } class="k{ task.status }">
-            <span each={ d in task.details } onclick={ d.click } title={ d.title }
-                  class={ d.className }>{ d && d._name }</span>
+          <li each={ task, it in block.tasks } class="k{ task.status } ur-line">
+            <span each={ word in task.details } onclick={ word.click } title={ word.title }
+                  class={ word.className }>{ word._name }</span>
           </li>
         </ul>
       </div>
@@ -43,4 +43,17 @@ this.on("update",() => {
   })
 })
 
+start(e) { this.command.start() }
+clear(e) {
+  this.command.mark("");
+  this.command.reset();
+  (uC.storage.get("__name__") == this.command.name) && uC.storage.remove("__main__");
+}
+
+replaceAll(e) {
+  Array.from(this.root.querySelectorAll(".kwarning .function")).map(e => {
+    e.click();
+    this.command.replace_links.shift();
+  });
+}
 </uc-command>

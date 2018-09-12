@@ -96,6 +96,7 @@
     }
     run() {
       uC._current_test = uC._current_test || this;
+      uC.storage.set("__main__",this.name);
       var self = this;
       const block = this.current_block = this.blocks[this.block_no];
       if (!block) { // All done! this should be in a separate "finish" method or something

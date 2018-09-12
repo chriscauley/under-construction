@@ -66,17 +66,6 @@
     }
   });
 
-  run(e) {
-    uC.storage.set("__main__",e.item.command.name);
-    e.item.command.start();
-  }
-
-  clear(e) {
-    e.item.command.mark("");
-    e.item.command.reset();
-    (uC.storage.get("__name__") == e.item.name) && uC.storage.remove("__main__");
-  }
-
   toggle(e) {
     uR.storage.set("KONSOLE_UP",!uR.storage.get("KONSOLE_UP"))
     this.update()
@@ -85,14 +74,6 @@
     uR.storage.set("KONSOLE_ACTIVE",null);
     this.stop();
     this.unmount();
-  }
-  replaceAll(e) {
-    const command = e.item.command;
-    const replaces = Array.from(document.querySelectorAll("#command_log_"+command.id+" .kwarn .function"));
-    replaces.map(e => {
-      e.click();
-      command.replace_links.shift();
-    });
   }
 
   autorun(e) {

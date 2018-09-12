@@ -17,16 +17,18 @@ uC.prepDetails = function prepDetails(args,tag) {
   }
   var out = args.map(function(word) {
     if (typeof word == "function") {
-      return _post({
+      const new_word = _post({
         className: "function",
         func: word,
         _name: word._name || word.name,
         click: function (e) {
-          e.item.click = undefined;
-          e.item._name = e.item.func() || e.item._name;
-          tag && tag.update()
+          new_word.click = undefined;
+          new_word.className = new_word.className.replace("pointer","");
+          new_word._name = word() || e.item._name;
+          tag && tag.update();
         },
       })
+      return new_word
     } else if (typeof word == "string") {
       var new_word = {
         content: word,
