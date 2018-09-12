@@ -369,7 +369,7 @@
         }, interval_ms);
       }
       waitForFunction._description = func._description || ("Wait: "+(func._name || func.name)+"()");
-      waitForFunction.details = ['waitForFunction'(func._name || func.name)+"()"];
+      waitForFunction.details = ['waitForFunction',(func._name || func.name)+"()"];
       return waitForFunction;
     }
 

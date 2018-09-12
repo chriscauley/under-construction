@@ -26,6 +26,7 @@ var JS_FILES = {
     "src/js/record.js",
     "src/js/prepDetails.js",
     "src/tags/konsole.tag",
+    "src/tags/uc-command.tag",
     "src/tags/compare-images.tag",
   ]
 };
