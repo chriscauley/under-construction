@@ -1,7 +1,6 @@
 uc-command {
   .ur-accord-header {
     line-height: 1.2;
-    margin-bottom: 0.25rem;
     .right { float: right; }
   }
   .ur-accord-content {
@@ -12,24 +11,18 @@ uc-command {
 
 uc-command { /* line status classes */
   .passed, .complete, .ksuccess, .success { /* #! TODO reconcile .k classses */
-    background: #AAFFAA;
+    background: lighten(#AAFFAA,10%);
+    .fa-check { color: #44a942; }
   }
   .kwarn, .kwarning, .warning, .warn { /* #! TODO reconcile .k classses */
     background: #fcf8e3;
-    .fa { color: #8a6d3b; }
+    .fa-warning { color: #8a6d3b; }
   }
   .failed, .kerror, .error { /* #! TODO reconcile .k classses */
     background: #e88;
-    .fa { color: #a94442; }
+    .fa-error { color: #a94442; }
   }
-  .running {
-    background: #AAAAFF;
-    .fa { color: #4244a9; }
-  }
-}
-
-uc-command .ur-accord {
-  padding-bottom: 0.25rem;
+  .running { background: lighten(#AAAAFF,10%); }
 }
 
 .ur-accord {
@@ -42,9 +35,9 @@ uc-command .ur-accord {
   }
   .ur-accord-toggle {
     cursor: pointer;
-    left: 0;
+    left: 0.25rem;
     position: absolute;
-    top: 0;
+    top: 0.25rem;
   }
   .ur-accord-header {
     padding-left: 2em;

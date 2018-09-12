@@ -116,7 +116,19 @@
         return this.stop()
       }
 
+      if (block.step == 0) { // first time running
+        let e = document.getElementById(block.uid);
+        e && e.classList.add("open")
+        block.status = "running"
+      }
       if (block.step >= block.tasks.length) { // onto the next block
+        let statuses = block.tasks.map(t => t.status).filter(s => s != "success")
+        if (!statuses.length) {
+          block.status = "success"
+          let e = document.getElementById(block.uid);
+          e && e.classList.remove("open")
+        } else if (statuses.indexOf('error') != -1) { block.status }
+        else { block.status = statuses[0] }
         this.block_no++;
         return this.run();
       }
@@ -179,6 +191,10 @@
         this.stop();
         this.pass();
       }
+      if (this.status == "passed") {
+        const e = document.getElementById(this.uid)
+        e && e.classList.remove("open")
+      }
       konsole.update();
     }
     test() {
@@ -190,6 +206,8 @@
       document.body.classList.add(uC.TEST_CLASS)
       window.riot && window.riot.compile()
       uC.__running__ = this;
+      const e = document.getElementById(this.uid)
+      e && e.classList.add("open")
 
       // restore halfway results for path changing tests
       this.__completed = uC.storage.get("__completed");
