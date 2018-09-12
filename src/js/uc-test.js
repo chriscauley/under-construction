@@ -9,6 +9,7 @@
       var options = {};
       uC.commands.push(this);
       this.id = uC.commands.length;
+      this.uid = "command-"+this.id;
       var functions = [];
       this.data = {};
       this.context = {};
@@ -96,7 +97,7 @@
     run() {
       uC._current_test = uC._current_test || this;
       var self = this;
-      const block = this.blocks[this.block_no];
+      const block = this.current_block = this.blocks[this.block_no];
       if (!block) { // All done! this should be in a separate "finish" method or something
         clearTimeout(this.fail_timeout);
         const counts = {}
@@ -213,13 +214,13 @@
     }
 
     do(message,context={}) {
-      // #! TODO needs to set this.doing or something equivalent (see this.last_comment)
       message = message || this.name;
       this.name = this.name || message;
       this.blocks.push(this.last_block = {
         message: message,
         tasks: [],
         hash: objectHash(message),
+        uid: "block-" + this.id + "-" + objectHash(message).slice(0,8),
         step: 0,
       })
       return this;
@@ -524,7 +525,7 @@
         const alert_opts = {
           series: diff_links,
           series_index: diff_links.length,
-          title: this.last_comment,
+          title: this.current_block.message,
         }
         if (match) {
           function f() {
@@ -577,13 +578,8 @@
       }
     }
     _comment(message) {
-      // current sets a line for the sake of setting a line. Maybe merge with Test.test to make for grouping
-      function func(pass,fail) {
-        this.last_comment = message;
-        pass();
-      }
-      func._name = message
-      return func
+      console.warn("uC.Test.comment is depracated in favor of uC.do")
+      return this.do(message)
     }
   }
 })();

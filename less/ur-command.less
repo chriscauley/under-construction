@@ -1,21 +1,26 @@
 ur-command {
-  border-left: 3px solid lightgray;
-  margin-left: 0.5rem;
+  .ur-accord-header {
+    .right { float: right; }
+  }
+  .ur-accord-content {
+    border-left: 3px solid lightgray;
+    margin-left: 0.25rem;
+  }
 }
 
 ur-command {
   li {
-    .word { padding-left: 0.5rem }
+    .word { margin-left: 0.25rem }
   }
 }
 
-ur-command .task {
+ur-command .block {
   padding-bottom: 0.25rem;
 }
 
-.accord {
+.ur-accord {
   &.closed {
-    .accord-close, .accord-content { display: none; }
+    > .ur-accord-header .ur-accord-close, > .ur-accord-content { display: none; }
   }
-  &:not(.closed) .accord-open { display: none; }
+  &:not(.closed) > .ur-accord-header .ur-accord-open { display: none; }
 }
