@@ -47,5 +47,16 @@
   //uC.on("test-start",() => { document.body.classList.add(uC.TEST_CLASS) })
   //uC.on("test-end",() => { document.body.classList.remove(uC.TEST_CLASS) })
 
-  window.u$ = {};
+  const u$ = window.u$ = {
+
+    // u$._reverse finds a name given a selector
+    _reverse: value => value && _.invert(u$)[value],
+
+    _verbose_reverse: value => { // like reverse, but slightly more readable
+      const selector = u$._reverse(value);
+      if (selector) { return `u$[${selector}]` }
+      return value || "LAST"
+    }
+
+  };
 })();

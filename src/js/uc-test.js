@@ -27,34 +27,32 @@
       if (!this.name) { console.warn("Test does not have name. Not sure what this will do") }
       this.results = new uR.Storage("__uc-results/"+this.name);
 
-      this.log = new uR.Log({name: this.name, mount_to: "#command_log_"+this.id});
       this.parent = options.parent;
       this.depth = this.parent?(this.parent.depth+1):0;
       this.step = 0;
       this.delay = 250;
       this.run = this.run.bind(this);
       uC.__selectors = uC.__selectors || {};
+      this.blocks = []
 
       var fnames = [
         'click', 'changeValue', 'changeForm', 'wait','mouseClick', 'assert', 'assertNot', 'assertEqual',
         'route', 'setPathname','setHash','reloadWindow','checkResults', 'debugger', 'ajax', 'shiftTime',
         'comment',
       ];
-      uR.forEach(fnames,function(fname) {
+      fnames.forEach(fname => {
         this[fname] = function() {
-          let args = arguments;
-          let f = this["_"+fname].bind(this);
-          if (typeof arguments[0] == "string") { uC.__selectors[arguments[0]] = 1; }
-          let f2 = function() {
-            return f.apply(this,[].slice.apply(args));
-          }.bind(this)
+          let args = [...arguments];
+          let f = this["_"+fname];
+          if (typeof args[0] == "string") { uC.__selectors[args[0]] = 1; }
+          let f2 = () => f.apply(this,args)
           f2._name = name;
           this.then(f2());
           return this;
         }
         // Because `function.name = fname` does nothing, we need:
         Object.defineProperty(this[fname],'name',{value:fname});
-      }.bind(this))
+      })
 
       functions.forEach(function (f) {
         f.bind(self)()
@@ -85,45 +83,66 @@
     }
     indent() { return Array(this.depth+1).join("|"); }
     then() {
-      uR.forEach(arguments || [],function(f) {
-        var func = (typeof f == 'function')?f:function func() { this.log(f); };
-        this.queue.push(func);
-        const name = f.description || f._name || f.name;
-        this.log(name);
-      }.bind(this));
+      uR.forEach([...arguments],(f) =>{
+        const name = f._description || f._name || f.name;
+        this.last_block.tasks.push({
+          action: f,
+          name: name,
+          details: f.details || [(f.name+"()")],
+        })
+      });
       return this;
     }
     run() {
       uC._current_test = uC._current_test || this;
       var self = this;
-      if (this.step == this.queue.length) { clearTimeout(this.fail_timeout); }
-      if (this.is_ready && this.step < this.queue.length) {
-        if (this.next_move && new uR.TrueDate().valueOf() < this.next_move) {
-          setTimeout(this.run, this.next_move - new uR.TrueDate().valueOf())
+      const block = this.blocks[this.block_no];
+      if (!block) { // All done! this should be in a separate "finish" method or something
+        clearTimeout(this.fail_timeout);
+        const counts = {}
+        this.blocks.forEach(block => {
+          block.tasks.forEach(task => counts[task.status] = (counts[task.status] || 0) + 1)
+        })
+        if (counts.error) { this.mark("error") }
+        else if (counts.warning) { this.mark("warning") }
+        else {
+          this.mark("passed");
+          this.parent_pass && this.parent_pass();
+          (uC.storage.get("__main__") == this.name) && uC.storage.remove("__main__");
+        }
+        konsole.update()
+        return this.stop()
+      }
+
+      if (block.step >= block.tasks.length) { // onto the next block
+        this.block_no++;
+        return this.run();
+      }
+      if (this.is_ready && block) {
+        if (this._delay_until && new uR.TrueDate().valueOf() < this._delay_until) {
+          setTimeout(this.run, this._delay_until - new uR.TrueDate().valueOf())
           return;
         }
         clearTimeout(this.fail_timeout);
-        var next = this.queue[this.step]; // this is either a test or a function passed in via then
+        const active_task = block.tasks[block.step]; // this is either a test or a function passed in via then
         function pass(...args) {
           while (args[0] === true) { args.shift() }
-
-          // use current log if no arguments applied
-          if (args.length == 0) { args = self.log._logs[self.step]; }
 
           // if not a warning, mark it a success
           if (args[0] != "WARN") {
             args.unshift("SUCCESS");
-            next.status = "success";
+            active_task.status = "success";
           } else {
-            next.status = "warning";
+            active_task.status = "warning";
           }
 
+          active_task.details = args;
           args.unshift(self.step);
-          self.log.apply(self,args);
-          self.completed.push(next._name || next.name);
-          uC.tests.set(self.getStateHash(),next.status);
+          self.completed.push(active_task._name || active_task.name);
+          uC.tests.set(self.getStateHash(),active_task.status);
           self.step++;
-          self.next_move = self.delay && (new uR.TrueDate().valueOf() + self.delay);
+          self._delay_until = self.delay && (new uR.TrueDate().valueOf() + self.delay);
+          block.step++
           self.run();
         }
         if (this.__completed && this.__completed.length) {
@@ -131,35 +150,20 @@
         }
         function fail(e) {
           var args = [].slice.call(arguments);
-          if (args.length == 0) { args = self.log._logs[self.step]; }
           args.unshift("ERROR")
           args.unshift(self.step);
-          self.log.apply(self,args);
+          active_Test.details = args;
           self.stop();
           self.mark("error");
           throw e;
         }
         this.fail_timeout = setTimeout(() => fail("Test took longer than "+uC.MAX_PASS_MS+" ms"),uC.MAX_PASS_MS)
-        this.status = next.status = 'running';
+        this.status = active_task.status = 'running';
 
         var result;
-        try { result = (next.start || next.bind(this))(pass,fail); }
+        try { result = active_task.action.bind(this)(pass,fail); }
         catch (e) { fail(e) }
-        result && pass(result); // test functions that return truthy objects move to next test
-        konsole.update();
-      }
-      var counts = {};
-      uR.forEach(this.queue,function(q) {
-        counts[q.status] = (counts[q.status] || 0) +1;
-      });
-      if (this.step == this.queue.length) {
-        if (counts.success == this.queue.length) {
-          this.mark("passed");
-          this.parent_pass && this.parent_pass();
-          (uC.storage.get("__main__") == this.name) && uC.storage.remove("__main__");
-        }
-        else if (counts.error) { this.mark("error"); }
-        else if (counts.warning) { this.mark("warning"); }
+        result && pass(result); // test functions that return truthy objects move to next task
         konsole.update();
       }
     }
@@ -173,9 +177,7 @@
       konsole.update();
     }
     test() {
-      for (var i=0;i<arguments.length;i++) {
-        this.queue.push(new this.constructor(arguments[i],{parent: this}));
-      }
+      [...arguments].forEach(f=> f.call(this))
       return this
     }
     start(pass,fail) {
@@ -187,6 +189,7 @@
       // restore halfway results for path changing tests
       this.__completed = uC.storage.get("__completed");
       uC.storage.remove("__completed");
+      this.block_no = 0 // should be loaded from completed
 
       var toggler = document.querySelector("[for=command_toggle_"+this.id+"]");
       toggler && toggler.click();
@@ -209,19 +212,20 @@
       return this.wait.apply(this,args).click.apply(this,args);
     }
 
-    do(message,context={}) { // could this be made int _do and remove wrapper?
+    do(message,context={}) {
+      // #! TODO needs to set this.doing or something equivalent (see this.last_comment)
       message = message || this.name;
       this.name = this.name || message;
-      function f(pass,fail) {
-        this.context = context;
-        pass("DO",message);
-      };
-      f._name = "DO "+message;
-      this.then(f)
+      this.blocks.push(this.last_block = {
+        message: message,
+        tasks: [],
+        hash: objectHash(message),
+        step: 0,
+      })
       return this;
     }
 
-    done(message) { //#! TODO is this necessary?
+    done(message) { //#! TODO depracate this
       message = message || this.name;
       function done(pass,fail) {
         pass("DONE", message);
@@ -231,7 +235,7 @@
       return this;
     }
 
-    /* after this are private methods, eg Test().action(args) is a wrapper around Test().then(_action(args)) */
+    /* after this are private methods, eg Test().f(args) is a wrapper around Test().then(_f(args)) */
 
     _setPathname(pathname) {
       console.warn("uC.Test.setPathname is deprecated. Use uC.Test.route instead.")
@@ -261,6 +265,7 @@
         pass("routed to ",url)
       }
       route._name = `route to ${url}`;
+      route.details = ["route",url];
       return route;
     }
     _reloadWindow() {
@@ -329,6 +334,7 @@
       if (typeof arg0 == "string") {
         args[0] = function waitForElement(pass,fail) { return uC.find(arg0,'waiting') }
         args[0]._name = args[0]._description = "waitForElement: "+arg0;
+        args[0].details = ["waitForElement",arg0]
         return this._waitForFunction.apply(this,args);
       }
     }
@@ -362,6 +368,7 @@
         }, interval_ms);
       }
       waitForFunction._description = func._description || ("Wait: "+(func._name || func.name)+"()");
+      waitForFunction.details = ['waitForFunction'(func._name || func.name)+"()"];
       return waitForFunction;
     }
 
@@ -408,6 +415,7 @@
         pass("clicked",element._query_selector);
       }
       click._description = "Click: " + (element || "LAST");
+      click.details = ["Click",element||LAST]
       return click
     }
 
@@ -462,6 +470,7 @@
       }.bind(this);
       changeValue._description = "Change: " + element || "LAST";
       changeValue._name = "change";
+      changeValue.details = ['uC.changeValue',element]
       return changeValue;
     }
     _changeForm(form_selector,values) {
@@ -493,13 +502,15 @@
         var out = uC.find(key,"result");
         return out;
       }
-      return function checkResults(pass,fail) {
+      function checkResults(pass,fail) {
         key = key || uC._last_query_selector;
         var value = value_func();
         // #! TODO: this next line is meant to allow data-target_time to load the textContent by triggering reflow
         // value && value.offsetHeight; // force a reflow to make sure css/text content has been updated
         this._compareResults(key,value,pass,fail);
       }
+      checkResults.details = ['checkResults',key||"LAST"]
+      return checkResults
     }
     _compareResults(key,value,pass,fail,name) {
       name = name || key

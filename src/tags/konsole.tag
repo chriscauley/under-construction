@@ -63,15 +63,12 @@
               <b>Replace All ({ command.replace_links.length })</b>
             </a>
           </div>
-          <ur-logger command={ command }></ur-logger>
+          <ur-command command={ command }></ur-command>
        </li>
       </div>
     </ur-tab>
     <ur-tab title="Settings">
       <button onclick={ () => uR.recorder.config.openEditor() }>Recorder Settings</button>
-    </ur-tab>
-    <ur-tab title="logs">
-      <ur-logger logger={ uR.recorder }></ur-logger>
     </ur-tab>
   </ur-tabs>
 
@@ -161,3 +158,33 @@
     }
   });
 </konsole>
+
+<ur-command>
+  <!--<div>{ opts.command.name }</div>-->
+  <div each={ block,ib in opts.command.blocks } key={ block.hash } class="task accord"
+       id="accord-{ block.hash }">
+    <div class="accord-header">
+      <i class="fa fa-plus-circle accord-open" onclick={ accord(block.hash) }></i>
+      <i class="fa fa-minus-circle accord-close" onclick={ accord(block.hash) }></i>
+      <b>{ block.message }</b>
+    </div>
+    <ul class="accord-content">
+      <li each={ task, it in block.tasks } class="k{ task.status }">
+        <span each={ d in task.details } onclick={ d.click } title={ d.title }
+              class={ d.className }>{ d && d._name }</span>
+      </li>
+    </ul>
+  </div>
+
+accord(key) {
+  return () => document.getElementById("accord-"+key).classList.toggle("closed")
+}
+this.on("mount",() => this.update())
+this.on("update",() => {
+  opts.command.blocks.forEach(block => {
+    block.tasks.forEach(task => {
+      task.details = uC.prepDetails(task.details,this) // nb: prepDetails is idempotent
+    })
+  })
+})
+</ur-command>
