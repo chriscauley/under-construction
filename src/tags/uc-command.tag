@@ -34,7 +34,9 @@ accord(key) {
 }
 const _icons = {
   passed: "check",
+  success: "check",
   warn: "warning",
+  running: "spinner",
 }
 getIcon(item) {
   return "fa fa-"+(_icons[item.status] || item.status || "question-circle-o")
@@ -58,7 +60,7 @@ clear(e) {
 }
 
 replaceAll(e) {
-  Array.from(this.root.querySelectorAll(".kwarning .function")).map(e => {
+  Array.from(this.root.querySelectorAll(".warning .function")).map(e => {
     e.click();
     this.command.replace_links.shift();
   });
