@@ -8,7 +8,7 @@
     TEST_CLASS: "disable_css_transitions", // test to apply to body when test starts
     storage: new uR.Storage(PREFIX),
     tests: new uR.Storage("__uc-tests/"),
-    html2canvas_opts: { logging: false, scale: 1 },
+    html2canvas_opts: { logging: false, scale: 1, windowWidth: 1000 },
     proxy: {
       send: window.XMLHttpRequest.prototype.send,
       open: window.XMLHttpRequest.prototype.open,

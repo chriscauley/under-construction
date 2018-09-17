@@ -438,7 +438,7 @@
         pass("clicked",element._query_selector);
       }
       click._description = "Click: " + (element || "LAST");
-      click.details = ["Click",element||LAST]
+      click.details = ["Click", element || "LAST"]
       return click
     }
 
