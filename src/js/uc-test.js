@@ -175,11 +175,9 @@
     mark(status) {
       this.status = status;
       uC.tests.set(this.name,status);
-      if (this.status == "passed" && this.pass) {
+      if (status == "passed") {
         this.stop();
-        this.pass();
-      }
-      if (this.status == "passed") {
+        this.pass && this.pass();
         const e = document.getElementById(this.uid)
         e && e.classList.remove("open")
       }

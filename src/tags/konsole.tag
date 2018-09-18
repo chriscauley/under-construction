@@ -38,11 +38,10 @@
   <ur-tabs class="default">
     <ur-tab class="commands" title="Commands">
       <div>
-        <button class={ uR.config.btn_success } onclick={ konsole.stop } if={ _running }>
-          Running: { _running } <i class="fa fa-close"></i></button>
-        <button class={ uR.config.btn_success } onclick={ konsole.autorun } if={ !_running }>
-          <!-- #! TODO -->
-          Auto-Run</button>
+        <button class={ uR.config.btn_success } onclick={ konsole.stop } if={ konsole._running }>
+          Running: { konsole._running } <i class="fa fa-close"></i></button>
+        <button class={ uR.config.btn_success } onclick={ konsole.autorun } if={ !konsole._running }>
+          { konsole.autorun_text }</button>
         <button class={uR.config.btn_error } onclick={ uC.tests.clear }
                 style="float: right">Clear Tests</button>
       </div>
@@ -83,13 +82,14 @@
       command.start(function() { self.autorun() });
     });
     if (e && !uC.__running__) { //human click and all tests are passed... reset them!
-      uC.commands.forEach(function(command) { command.status = ""; });
+      uC.commands.forEach(command => command.mark(undefined))
       self.autorun()
     }
   }
   this.on("update",function() {
     this._running = uC.storage.get("__main__");
     uR.forEach(uR.__logs,function(l) { l.update_tag() })
+    this.autorun_text = uC.commands.filter(c=>c.status !="passed").length?"Run unpassed":"Reset and run"
   });
   this.on("mount",function() {
     this.stop = function() {
