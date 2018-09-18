@@ -82,57 +82,45 @@
     getLocal(key) {
       return this.context[key];
     }
-    indent() { return Array(this.depth+1).join("|"); }
     then() {
-      uR.forEach([...arguments],(f) =>{
-        const name = f._description || f._name || f.name || undefined;
-        this.last_block.tasks.push({
-          action: f,
-          name: name,
-          details: f.details || [name],
-        })
-      });
+      [...arguments].forEach(f => { this.last_block.addTask(f) })
       return this;
+    }
+    finish() {
+      clearTimeout(this.fail_timeout);
+      const counts = {}
+      this.blocks.forEach(block => {
+        block.tasks.forEach(task => counts[task.status] = (counts[task.status] || 0) + 1)
+      })
+      if (counts.error) { this.mark("error") }
+      else if (counts.warning) { this.mark("warning") }
+      else {
+        this.mark("passed");
+        this.parent_pass && this.parent_pass();
+        (uC.storage.get("__main__") == this.name) && uC.storage.remove("__main__");
+      }
+      konsole.update()
+      this.stop()
     }
     run() {
       uC._current_test = uC._current_test || this;
       uC.storage.set("__main__",this.name);
       var self = this;
       const block = this.current_block = this.blocks[this.block_no];
-      if (!block) { // All done! this should be in a separate "finish" method or something
-        clearTimeout(this.fail_timeout);
-        const counts = {}
-        this.blocks.forEach(block => {
-          block.tasks.forEach(task => counts[task.status] = (counts[task.status] || 0) + 1)
-        })
-        if (counts.error) { this.mark("error") }
-        else if (counts.warning) { this.mark("warning") }
-        else {
-          this.mark("passed");
-          this.parent_pass && this.parent_pass();
-          (uC.storage.get("__main__") == this.name) && uC.storage.remove("__main__");
-        }
-        konsole.update()
-        return this.stop()
+      if (!block) {
+        this.finish();
+        return;
       }
 
       if (block.step == 0) { // first time running
-        let e = document.getElementById(block.uid);
-        e && e.classList.add("open")
-        block.status = "running"
+        block.start();
       }
       if (block.step >= block.tasks.length) { // onto the next block
-        let statuses = block.tasks.map(t => t.status).filter(s => s != "success")
-        if (!statuses.length) {
-          block.status = "success"
-          let e = document.getElementById(block.uid);
-          e && e.classList.remove("open")
-        } else if (statuses.indexOf('error') != -1) { block.status }
-        else { block.status = statuses[0] }
+        block.finish();
         this.block_no++;
         return this.run();
       }
-      if (this.is_ready && block) {
+      if (this.is_ready) {
         if (this._delay_until && new uR.TrueDate().valueOf() < this._delay_until) {
           setTimeout(this.run, this._delay_until - new uR.TrueDate().valueOf())
           return;
@@ -158,7 +146,7 @@
           uC.tests.set(self.getStateHash(),active_task.status);
           self.step++;
           self._delay_until = self.delay && (new uR.TrueDate().valueOf() + self.delay);
-          block.step++
+          block.step++;
           self.run();
         }
         if (this.__completed && this.__completed.length) {
@@ -238,13 +226,10 @@
     do(message,context={}) {
       message = message || this.name;
       this.name = this.name || message;
-      this.blocks.push(this.last_block = {
-        message: message,
-        tasks: [],
-        hash: objectHash(message),
-        uid: "block-" + this.id + "-" + objectHash(message).slice(0,8),
-        step: 0,
-      })
+      this.blocks.push(this.last_block = new uC.Block({
+        message,
+        parent: this,
+      }))
       return this;
     }
 

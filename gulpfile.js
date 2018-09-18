@@ -20,6 +20,7 @@ var JS_FILES = {
   uc: [
     "src/js/under-construction.js",
     "src/js/uc-test.js",
+    "src/js/block.js",
     "src/js/mouse.js",
     "src/js/diff.js",
     "src/js/utils.js",

@@ -17,4 +17,18 @@ uC.Block = class Block {
       details: f.details || [name],
     })
   }
+  start() {
+    let e = document.getElementById(this.uid);
+    e && e.classList.add("open")
+    this.status = "running"
+  }
+  finish() {
+    let statuses = this.tasks.map(t => t.status).filter(s => s != "success")
+    if (!statuses.length) {
+      this.status = "success"
+      let e = document.getElementById(this.uid);
+      e && e.classList.remove("open")
+    } else if (statuses.indexOf('error') != -1) { this.status = 'error' }
+    else { this.status = statuses[0] }
+  }
 }
