@@ -231,8 +231,8 @@
 
   uC.Test = class Test extends uC.BaseTest {
     waitForThenClick() {
-      var args = [].slice.apply(arguments);
-      return this.wait.apply(this,args).click.apply(this,args);
+      console.warn("DEPRECATED: uC.Test.waitForThenClick(selector) will be removed after 2/19. Use Test.wait(selector).click() instead.")
+      return this.wait(...arguments).click(...arguments)
     }
 
     do(message,context={}) {
@@ -248,20 +248,16 @@
       return this;
     }
 
-    done(message) { //#! TODO depracate this
-      message = message || this.name;
-      function done(pass,fail) {
-        pass("DONE", message);
-      };
-      done._description = "DONE: " + message;
-      this.then(done);
+    done(message) {
+      console.warn("DEPRECATED: uC.Test.done will be removed after 2/19. Currently does nothing.")
       return this;
     }
 
     /* after this are private methods, eg Test().f(args) is a wrapper around Test().then(_f(args)) */
 
     _setPathname(pathname) {
-      console.warn("uC.Test.setPathname is deprecated. Use uC.Test.route instead.")
+      // #! DEPRECATED remove after 2/19
+      console.warn("Use uC.Test.route instead instead uC.Test.setPathname.")
       return function setPath(pass, fail) {
         if (pathname != window.location.pathname) {
           // #! TODO: this needs to set some kind of "resume" mark first
@@ -272,7 +268,8 @@
     }
 
     _setHash(hash) {
-      console.warn("uC.Test.setHash is deprecated. Use uC.Test.route instead.")
+      // #! DEPRECATED remove after 2/19
+      console.warn("Use uC.Test.route instead of uC.Test.setHash.")
       return function setHash(pass,fail) {
         if (!hash.indexOf("#") == 0) { hash = "#" + hash }
         if (hash != window.location.hash) {
@@ -291,6 +288,7 @@
       route.details = ["route",url];
       return route;
     }
+
     _reloadWindow() {
       return function reloadWindow(pass,fail) {
         this.completed.push("window reloaded");
@@ -600,7 +598,7 @@
       }
     }
     _comment(message) {
-      console.warn("uC.Test.comment is depracated in favor of uC.do")
+      console.warn("uC.Test.comment is deprecated in favor of uC.do")
       return this.do(message)
     }
   }
