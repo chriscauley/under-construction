@@ -8,7 +8,7 @@
     },
     schema:[],
   };
-  uR.forEach(['log','warn','error','watch','addCommands','toggle'],function(key) {
+  uR.forEach(['addCommands','toggle'],function(key) {
     konsole[key] = function() {
       konsole._ready.push([key,arguments]);
     }
@@ -52,17 +52,8 @@
     </ur-tab>
   </ur-tabs>
 
-  var watch_keys = [];
-  var watch_ings = {};
-  var self = this;
-
   this.on('update',function() {
     this.className = uR.storage.get("KONSOLE_UP")?"open":"closed";
-    this.watch = [];
-    for (var i=0; i < watch_keys.length; i++) {
-      var k = watch_keys[i];
-      this.watch.push({key: k, value: watch_ings[k]});
-    }
   });
 
   toggle(e) {
@@ -76,10 +67,10 @@
   }
 
   autorun(e) {
-    uC.commands.forEach(function(command) {
+    uC.commands.forEach( command => {
       if (uC.__running__) { return }
       if (command.status =="passed") { return }
-      command.start(function() { self.autorun() });
+      command.start(function() { this.autorun() });
     });
     if (e && !uC.__running__) { //human click and all tests are passed... reset them!
       uC.commands.forEach(command => command.mark(undefined))
@@ -88,7 +79,6 @@
   }
   this.on("update",function() {
     this._running = uC.storage.get("__main__");
-    uR.forEach(uR.__logs,function(l) { l.update_tag() })
     this.autorun_text = uC.commands.filter(c=>c.status !="passed").length?"Run unpassed":"Reset and run"
   });
   this.on("mount",function() {
@@ -97,7 +87,6 @@
       uC.__running__ && uC.__running__.stop();
     };
     this._ready = window.konsole._ready;
-    new uR.Log({ parent: this, name: "Konsole" });
     window.konsole = this;
     this.addCommands = function() {
       uR.forEach(arguments,function(command) {
@@ -107,9 +96,8 @@
         }
       });
     };
-    uR.forEach(window.konsole._ready,function(tup) {
-      var key = tup[0], args = tup[1];
-      konsole[key].apply(self,[].slice.apply(args));
+    window.konsole._ready.forEach( ([key,args]) => {
+      konsole[key].apply(this,[].slice.apply(args));
     });
     setTimeout(konsole.update,500);
     if (!document.querySelector(uR.config.mount_alerts_to)) {
